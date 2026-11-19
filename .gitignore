@@ -1,0 +1,16 @@
+# Конфиги контуров содержат пароль, кроме образца
+/env*.json
+!/env.example.json
+
+# Результаты прогонов
+/artifacts/
+
+# Ставит install.bat: Node.js, пакеты, временный каталог, ярлыки с локальными путями
+/node/
+node_modules/
+/.install-tmp/
+/*.lnk
+
+# Кэш Python и pytest при запуске сверок из tests/
+__pycache__/
+.pytest_cache/

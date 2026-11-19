@@ -1,0 +1,2 @@
+# cmd требует CRLF
+*.bat text eol=crlf
