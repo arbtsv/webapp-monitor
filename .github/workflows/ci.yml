@@ -1,0 +1,120 @@
+name: CI
+
+# Единственный серверный гейт репозитория: линты (ESLint + Prettier), тесты
+# бандла (unit/smoke/bat/install-bat) и Python-сверки дублей (ruff + pytest).
+# Локальный гейт — pre-commit (husky + lint-staged, см. CONTRIBUTING.md).
+# Раннер — windows-latest: monitor.bat/install.bat идут через cmd.exe и по
+# своей природе Windows-only; смоук и юнит-тесты гоняют настоящий бандл.
+# Проверки зовутся через npx напрямую, npm-скрипты test:* — через npm run:
+# они кроссплатформенны и не несут локальных путей машины разработчика.
+
+on:
+  pull_request:
+    branches: [main]
+    # Список ЗАМЕЩАЕТ дефолт GitHub ([opened, synchronize, reopened]), а не
+    # дополняет его; ready_for_review нужен, чтобы gh pr ready (шаг self-review
+    # в Skill pr-ship-procedure) перезапускал self-review-marker свежим прогоном.
+    types: [opened, synchronize, reopened, ready_for_review]
+  # pull_request уже перезапускается на каждый пуш в ветку (synchronize), поэтому
+  # push без фильтра дублировал бы тот же прогон. push:[main] гоняет CI
+  # постфактум на head пуша в main (squash-мерж PR), но не на каждом пуше.
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Вне main новый пуш отменяет выполняющийся прогон своей группы; на main
+# выполняющийся прогон доживает до конца.
+concurrency:
+  group: '${{ github.workflow }}-${{ github.ref }}'
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  lint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+      - run: npm ci
+      # Область — белый список в eslint.config.mjs (копия в .prettierignore и
+      # package.json -> lint-staged).
+      - run: npx eslint
+      - run: npx prettier --check .
+
+  # Прогоны — строго по очереди: у фиктивного кабинета фиксированный порт,
+  # поэтому шаги одной джобы, а не параллельные джобы. test:smoke и test:fake
+  # завершаются кодом 1 ожидаемо (в наборе медленные/сломанные узлы) — сверку
+  # кодов и вывода делают обёртки run-smoke.mjs / run-fake.mjs; в CI гоняем
+  # test:smoke (конвейер замеров + отчёт), test:fake не гоняем: его первый
+  # шаг — тот же прогон через monitor.bat, покрытый смоуком на уровне
+  # конвейера, а bat-шимы покрыты test:bat и test:install-bat ниже.
+  tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: npm run test:unit
+      - run: npm run test:smoke
+      - run: npm run test:bat
+      - run: npm run test:install-bat
+
+  # Сверки дублей бандла (stdlib-only, 2 файла): pytest гоняет, ruff следит
+  # за стилем. Python на раннере — установленный; pytest/ruff ставим в pip.
+  parity:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install pytest ruff
+      - run: ruff check tests/test_parity_constants.py tests/test_parity_sanitize.py
+      - run: python -m pytest tests
+
+  # Гейт саморевью. Только `pull_request`, никогда `_target`-вариант: он
+  # запускает код ветки PR с токеном на запись, чего эта джоба не должна
+  # получать. Job-level `permissions:` ЗАМЕЩАЕТ, а не дополняет
+  # верхнеуровневый `contents: read`, поэтому он повторён явно; токен не
+  # остаётся на диске (persist-credentials: false) и не передаётся шагу со
+  # скриптом: скрипт берётся из дерева PR и токена не получает; комментарии
+  # читает отдельный шаг. PR открывается черновиком (Skill pr-ship-procedure):
+  # до gh pr ready условие draft == false не выполнено, и джоба skipped —
+  # маркер физически ещё не может существовать; gh pr ready запускает свежий
+  # прогон, который уже видит опубликованный маркер-комментарий.
+  self-review-marker:
+    # Оба условия обязательны: на push-триггере github.event.pull_request
+    # отсутствует (null), а GitHub Actions коэрсит null == false в true.
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # Тела комментариев не печатаются в лог — они уходят только в файл.
+      # shell: bash — дефолтный pwsh раннера не резолвит $RUNNER_TEMP/$PR_NUMBER
+      # без префикса $env:; скрипт и так POSIX, оба шага держим на одном шелле.
+      - shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr view "$PR_NUMBER" --json comments --jq '.comments[].body' > "$RUNNER_TEMP/pr-comments.txt"
+      # Без GH_TOKEN в окружении: скрипт лежит в дереве PR. sh — Git Bash
+      # раннера, скрипт портируемый POSIX.
+      - shell: bash
+        env:
+          COMMENTS_FILE: ${{ runner.temp }}/pr-comments.txt
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: sh tools/ci/check-review-marker.sh
