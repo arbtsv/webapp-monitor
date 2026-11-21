@@ -16,7 +16,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "prepare": "husky",
+    "prepare": "node node_modules/husky/bin.js",
     "lint": "eslint",
     "format": "prettier --write",
     "format:check": "prettier --check",
