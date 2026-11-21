@@ -1,0 +1,3 @@
+# Pre-commit: lint-staged по белому списку scope (eslint + prettier).
+# Прямой вызов вместо `npx lint-staged`: npx-резолв стоит ~3 с вхолостую.
+node ./node_modules/lint-staged/bin/lint-staged.js

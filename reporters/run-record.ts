@@ -19,7 +19,6 @@ export default class RunRecordReporter implements Reporter {
     try {
       recordRun(config, runId, targets);
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn(`[webapp-monitor] runs.csv не записан: ${(e as Error).message}`);
     }
   }

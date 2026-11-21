@@ -14,3 +14,4 @@ node_modules/
 # Кэш Python и pytest при запуске сверок из tests/
 __pycache__/
 .pytest_cache/
+.ruff_cache/

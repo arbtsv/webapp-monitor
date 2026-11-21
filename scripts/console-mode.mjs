@@ -18,11 +18,11 @@ import { spawnSync } from 'child_process';
 // STD_INPUT_HANDLE = -10; ENABLE_QUICK_EDIT_MODE = 0x40, ENABLE_EXTENDED_FLAGS = 0x80.
 const PS_SNIPPET =
   'Add-Type -Name Q -Namespace M ' +
-  '-MemberDefinition \'' +
+  "-MemberDefinition '" +
   '[DllImport("kernel32.dll")] public static extern System.IntPtr GetStdHandle(int n); ' +
   '[DllImport("kernel32.dll")] public static extern bool GetConsoleMode(System.IntPtr h, out uint m); ' +
   '[DllImport("kernel32.dll")] public static extern bool SetConsoleMode(System.IntPtr h, uint m);' +
-  '\'; ' +
+  "'; " +
   '$h = [M.Q]::GetStdHandle(-10); $m = [uint32]0; ' +
   'if ([M.Q]::GetConsoleMode($h, [ref]$m)) ' +
   '{ if (-not [M.Q]::SetConsoleMode($h, (($m -band (-bnot [uint32]0x40)) -bor [uint32]0x80))) { exit 1 } } ' +
@@ -45,7 +45,7 @@ export function disableQuickEdit(timeoutMs = 15000) {
     const run = spawnSync('powershell.exe', powershellQuickEditOffArgs(), {
       stdio: 'inherit',
       timeout: timeoutMs,
-      windowsHide: true,
+      windowsHide: true
     });
     if (run.error) {
       return { ok: false, reason: run.error.message };

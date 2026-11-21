@@ -47,8 +47,18 @@ export interface Timeouts {
   navigationMs: number;
 }
 
-const DEFAULT_TIMEOUTS: Timeouts = { stepMs: 30_000, testMs: 180_000, actionMs: 30_000, navigationMs: 60_000 };
-const DEBUG_TIMEOUTS: Timeouts = { stepMs: 180_000, testMs: 900_000, actionMs: 180_000, navigationMs: 180_000 };
+const DEFAULT_TIMEOUTS: Timeouts = {
+  stepMs: 30_000,
+  testMs: 180_000,
+  actionMs: 30_000,
+  navigationMs: 60_000
+};
+const DEBUG_TIMEOUTS: Timeouts = {
+  stepMs: 180_000,
+  testMs: 900_000,
+  actionMs: 180_000,
+  navigationMs: 180_000
+};
 
 export type TimeoutsMode = 'default' | 'debug';
 
@@ -94,7 +104,9 @@ export function loadConfig(): MonitorConfig {
     throw new Error(`${CONFIG_PATH}: не заполнены login/password`);
   }
   if (!cfg.scenario || typeof cfg.scenario !== 'string' || cfg.scenario.trim() === '') {
-    throw new Error(`${CONFIG_PATH}: не задан scenario — имя файла сценария без расширения (specs/<scenario>.spec.ts)`);
+    throw new Error(
+      `${CONFIG_PATH}: не задан scenario — имя файла сценария без расширения (specs/<scenario>.spec.ts)`
+    );
   }
   if (!cfg.targets || Object.keys(cfg.targets).length === 0) {
     throw new Error(`${CONFIG_PATH}: не задан ни один узел в targets`);
@@ -103,7 +115,9 @@ export function loadConfig(): MonitorConfig {
   // Полноту порогов по именам метрик сверяет сценарий при загрузке (specs/cabinet.ts):
   // ядро знает имена метрик как произвольные строки. Здесь — сама таблица порогов.
   if (!cfg.thresholds || typeof cfg.thresholds !== 'object' || Object.keys(cfg.thresholds).length === 0) {
-    throw new Error(`${CONFIG_PATH}: не заданы thresholds — для каждой метрики сценария нужен порог { reference, maxRatio }`);
+    throw new Error(
+      `${CONFIG_PATH}: не заданы thresholds — для каждой метрики сценария нужен порог { reference, maxRatio }`
+    );
   }
   for (const metric of Object.keys(cfg.thresholds)) {
     const t = cfg.thresholds[metric];
@@ -153,6 +167,8 @@ export function resolveTargets(cfg: MonitorConfig): ResolvedTarget[] {
 
 function assertPositive(value: unknown, field: string): void {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    throw new Error(`${CONFIG_PATH}: ${field} должно быть положительным числом, получено ${JSON.stringify(value)}`);
+    throw new Error(
+      `${CONFIG_PATH}: ${field} должно быть положительным числом, получено ${JSON.stringify(value)}`
+    );
   }
 }

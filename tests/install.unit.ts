@@ -23,9 +23,7 @@ const BUNDLE_ROOT = path.resolve(__dirname, '..');
 const CASES_ROOT = path.join(BUNDLE_ROOT, 'artifacts', '_dev', 'install-unit');
 const WIN32 = process.platform === 'win32';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let installMod: any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let messagesMod: any;
 
 let parseInstallArgs: (argv: string[]) => { key: string; unknown: string | null };
@@ -49,9 +47,7 @@ let runInstall: (argv: string[], io?: { stdin?: unknown }) => Promise<number>;
 
 test.beforeAll(async () => {
   installMod = await import(pathToFileURL(path.join(BUNDLE_ROOT, 'scripts', 'install.mjs')).href);
-  messagesMod = await import(
-    pathToFileURL(path.join(BUNDLE_ROOT, 'scripts', 'install-messages.mjs')).href
-  );
+  messagesMod = await import(pathToFileURL(path.join(BUNDLE_ROOT, 'scripts', 'install-messages.mjs')).href);
   parseInstallArgs = installMod.parseInstallArgs;
   decidePlan = installMod.decidePlan;
   detectConsoleCp = installMod.detectConsoleCp;
@@ -97,19 +93,17 @@ test('decidePlan: /reinstall — wipe и все три шага при любо�
   expect(decidePlan(ready, 'reinstall')).toEqual({
     wipe: true,
     steps: ['node-download', 'npm-ci', 'browser'],
-    ready: false,
+    ready: false
   });
   expect(decidePlan(FULL, 'reinstall').wipe).toBe(true);
 });
 
 test('decidePlan: только недостающее', () => {
   expect(decidePlan({ localNodeOk: true, deps: 'ok', browser: 'local' }, 'none').ready).toBe(true);
-  expect(decidePlan({ localNodeOk: true, deps: 'stale', browser: 'local' }, 'y').steps).toEqual([
-    'npm-ci',
+  expect(decidePlan({ localNodeOk: true, deps: 'stale', browser: 'local' }, 'y').steps).toEqual(['npm-ci']);
+  expect(decidePlan({ localNodeOk: true, deps: 'ok', browser: 'missing' }, 'none').steps).toEqual([
+    'browser'
   ]);
-  expect(
-    decidePlan({ localNodeOk: true, deps: 'ok', browser: 'missing' }, 'none').steps
-  ).toEqual(['browser']);
   expect(decidePlan(FULL, 'y').steps).toEqual(['node-download', 'npm-ci', 'browser']);
 });
 
@@ -208,7 +202,7 @@ function fakeTtyStdin(answer: string | null) {
         setImmediate(() => fn(''));
       }
       return this;
-    },
+    }
   };
 }
 

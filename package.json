@@ -11,11 +11,15 @@
     "windows"
   ],
   "author": "arbtsv",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
+    "prepare": "node -e \"if (process.env.CI === 'true') process.exit(0); const h = require('husky'); (h.default || h)()\"",
+    "lint": "eslint",
+    "format": "prettier --write",
+    "format:check": "prettier --check",
     "monitor": "node scripts/monitor.mjs",
     "report": "node scripts/report.mjs",
     "show-report": "playwright show-report artifacts/report",
@@ -25,9 +29,32 @@
     "test:install-bat": "node ./tests/install-bat.mjs",
     "test:fake": "node ./tests/run-fake.mjs"
   },
+  "//lint-staged": [
+    "Белый список области линта продублирован в трёх местах: eslint.config.mjs,",
+    ".prettierignore и этот ключ. Менять scope — во всех трёх сразу, иначе",
+    "покрытие молча разъедется. Из области намеренно снаружи: *.bat (cmd и CRLF),",
+    "package-lock.json (генерируемый), *.py (гейтит pytest/ruff в CI)."
+  ],
+  "lint-staged": {
+    "{helpers,reporters,specs,tests}/**/*.ts": "eslint",
+    "scripts/**/*.mjs": "eslint",
+    "{helpers,reporters,specs,scripts,tests}/**/*.{ts,mjs,json,md}": "prettier --write",
+    "playwright.config.ts": [
+      "eslint",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": "prettier --write"
+  },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "1.61.0",
     "@types/node": "22.20.1",
-    "typescript": "5.9.3"
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.1",
+    "prettier": "^3.10.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.73.0"
   }
 }

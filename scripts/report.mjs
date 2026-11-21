@@ -37,7 +37,7 @@ import {
   readConfigTargetCount,
   entryReserveLines,
   runReportZipPath,
-  isRegularFile,
+  isRegularFile
 } from './common.mjs';
 
 /**
@@ -166,7 +166,7 @@ export function buildReport() {
     {
       keyColumn: 'timestamp',
       since: metricsSince,
-      reserveLines: entryReserveLines(runsCsv?.rows ?? [], readConfigTargetCount()),
+      reserveLines: entryReserveLines(runsCsv?.rows ?? [], readConfigTargetCount())
     },
     'report'
   );
@@ -223,7 +223,8 @@ export function buildReport() {
   // slow и хотя бы одного замера.
   const slow = rows.filter(r => r.verdict === 'slow');
   const outcomeKnown = rawJson !== null;
-  const verdict = !outcomeKnown || outcome.failed > 0 || slow.length > 0 || rows.length === 0 ? 'ПРОВАЛ' : 'НОРМА';
+  const verdict =
+    !outcomeKnown || outcome.failed > 0 || slow.length > 0 || rows.length === 0 ? 'ПРОВАЛ' : 'НОРМА';
 
   // Порядок узлов — как в проектах JSON, если там есть все узлы из CSV; иначе natural sort.
   const csvNodes = [...new Set(rows.map(r => r.target))];
@@ -279,7 +280,9 @@ export function buildReport() {
     lines.push(`  сценарий: ${mainRunRow.scenario || 'не записан'}`);
     lines.push(`  узлы: ${mainRunRow.targets}`);
     lines.push(`  фильтр узлов: ${process.env.MONITOR_TARGET?.trim() || 'не задан'}`);
-    lines.push(`  машина: ${mainRunRow.host}; ядер: ${mainRunRow.cpu_count}; воркеров: ${mainRunRow.workers}`);
+    lines.push(
+      `  машина: ${mainRunRow.host}; ядер: ${mainRunRow.cpu_count}; воркеров: ${mainRunRow.workers}`
+    );
     lines.push(`  таймауты: ${formatTimeouts(mainRunRow.timeouts)}`);
     lines.push(
       `  версии: node ${mainRunRow.node_version}, playwright ${mainRunRow.playwright_version}, ` +
@@ -445,9 +448,13 @@ export function buildReport() {
       try {
         // Список — промежуточный файл, убирается в finally при любом сбое.
         fs.writeFileSync(ZIP_LIST, zipListText(toPack), 'utf-8');
-        execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', buildZipScript(ZIP_LIST, runZipPath)], {
-          stdio: 'pipe',
-        });
+        execFileSync(
+          'powershell',
+          ['-NoProfile', '-NonInteractive', '-Command', buildZipScript(ZIP_LIST, runZipPath)],
+          {
+            stdio: 'pipe'
+          }
+        );
       } finally {
         fs.rmSync(ZIP_LIST, { force: true });
       }
@@ -554,7 +561,9 @@ function failureLines(failures) {
   const out = ['Упавшие проверки:'];
   for (const f of failures) {
     out.push(`  [${f.project}] ${f.title}`);
-    for (const l of stripAnsi(String(f.error || '')).split(/\r?\n/).slice(0, 6)) {
+    for (const l of stripAnsi(String(f.error || ''))
+      .split(/\r?\n/)
+      .slice(0, 6)) {
       out.push(`      ${l}`);
     }
   }
@@ -653,7 +662,7 @@ function buildZipScript(listFile, destZip) {
     '  }',
     '} finally {',
     '  $zip.Dispose()',
-    '}',
+    '}'
   ].join('\n');
 }
 
@@ -690,7 +699,7 @@ function summarize(json) {
             project: t.projectName || '',
             title: spec.title,
             error: last && last.error ? last.error.message : '',
-            thresholdFailures: [],
+            thresholdFailures: []
           });
         }
       }

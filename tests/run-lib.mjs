@@ -55,7 +55,7 @@ export function runCaptured(args, env) {
     const child = spawn(process.execPath, args, {
       cwd: BUNDLE_ROOT,
       env,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['ignore', 'pipe', 'pipe']
     });
     const chunks = [];
     child.stdout.on('data', chunk => {

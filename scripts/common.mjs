@@ -48,7 +48,10 @@ export function colorVerdict(text) {
   if (!process.stdout.isTTY || process.env.NO_COLOR) {
     return text;
   }
-  return text.replace(/^ИТОГ: (НОРМА|ПРОВАЛ)$/m, (line, v) => `\u001B[${v === 'НОРМА' ? 92 : 91}m${line}\u001B[0m`);
+  return text.replace(
+    /^ИТОГ: (НОРМА|ПРОВАЛ)$/m,
+    (line, v) => `\u001B[${v === 'НОРМА' ? 92 : 91}m${line}\u001B[0m`
+  );
 }
 
 /** id последнего основного прогона из `last-run-id.txt`; нет, пуст или не читается — `''`. */
@@ -253,7 +256,9 @@ export function readCsvTail(filePath, { keyColumn, since = null, reserveLines = 
       }
     }
 
-    const rows = splitLines(readRange(start, size - start).toString('utf-8')).map(line => rowFromLine(header, line));
+    const rows = splitLines(readRange(start, size - start).toString('utf-8')).map(line =>
+      rowFromLine(header, line)
+    );
     return { header, rows, startOffset: start };
   } finally {
     fs.closeSync(fd);

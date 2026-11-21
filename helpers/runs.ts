@@ -7,7 +7,15 @@ import * as path from 'path';
 import type { FullConfig } from '@playwright/test/reporter';
 import * as os from 'os';
 import { ensureCsvFileHeader, csvCell } from './metrics';
-import { ARTIFACTS_DIR, BUNDLE_ROOT, CONFIG_PATH, RECHECK_OF, TIMEOUTS, TIMEOUTS_MODE, loadConfig } from './config';
+import {
+  ARTIFACTS_DIR,
+  BUNDLE_ROOT,
+  CONFIG_PATH,
+  RECHECK_OF,
+  TIMEOUTS,
+  TIMEOUTS_MODE,
+  loadConfig
+} from './config';
 
 export const RUNS_CSV_PATH = path.join(ARTIFACTS_DIR, 'runs.csv');
 
@@ -25,12 +33,14 @@ export const RUNS_CSV_HEADER = [
   'timeouts',
   'node_version',
   'playwright_version',
-  'bundle_version',
+  'bundle_version'
 ].join(',');
 
 function bundleVersion(): string {
   try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(BUNDLE_ROOT, 'package.json'), 'utf-8')) as { version?: string };
+    const pkg = JSON.parse(fs.readFileSync(path.join(BUNDLE_ROOT, 'package.json'), 'utf-8')) as {
+      version?: string;
+    };
     return pkg.version || '';
   } catch {
     return '';
@@ -58,7 +68,7 @@ export function recordRun(config: FullConfig, runIdValue: string, targets: strin
     timeouts,
     process.version,
     config.version,
-    bundleVersion(),
+    bundleVersion()
   ].map(csvCell);
 
   fs.appendFileSync(RUNS_CSV_PATH, cells.join(',') + '\n', 'utf-8');

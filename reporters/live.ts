@@ -3,10 +3,20 @@
  * `{кадр} {N} {узел} › {сценарий} › {шаг} {SS.S}` + итоги со статусом/длительностью; не-TTY —
  * лог start/end без ANSI и `\r`; метрик нет; в `--list` не подключается (ветка в playwright.config.ts).
  */
-import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestError, TestResult, TestStep } from '@playwright/test/reporter';
+import type {
+  FullConfig,
+  FullResult,
+  Reporter,
+  Suite,
+  TestCase,
+  TestError,
+  TestResult,
+  TestStep
+} from '@playwright/test/reporter';
 
 // Встроенный list-reporter так определяет ненадёжный UTF-8: win32 без TERM_PROGRAM=vscode и WT_SESSION — символы ASCII.
-const ASCII_TERMINAL = process.platform === 'win32' && process.env.TERM_PROGRAM !== 'vscode' && !process.env.WT_SESSION;
+const ASCII_TERMINAL =
+  process.platform === 'win32' && process.env.TERM_PROGRAM !== 'vscode' && !process.env.WT_SESSION;
 
 const ASCII_SPINNER = ['|', '/', '-', '\\'];
 const BRAILLE_SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -24,8 +34,9 @@ const INDENT = '  ';
 // одновременно такт дебаунса: отдельный таймер не нужен.
 const RESIZE_QUIET_MS = 200;
 
-// eslint-disable-next-line no-control-regex -- ESC и есть искомый символ
-const ANSI_REGEX = /([\u001B\u009B][[\]()#?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?\u0007)|(?:(?:\d{0,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~])))/g;
+const ANSI_REGEX =
+  // eslint-disable-next-line no-control-regex -- ESC и есть искомый символ
+  /([\u001B\u009B][[\]()#?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?\u0007)|(?:(?:\d{0,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~])))/g;
 
 /** Очистка ANSI (как `stripAnsiEscapes` Playwright): чужой текст не должен управлять терминалом. */
 export function stripAnsi(text: string): string {
@@ -57,7 +68,16 @@ export function stepCaption(title: string): string {
  * Счётчик времени теста идёт в конце и опускается только вместе со всей строкой:
  * до первого шага строка — `{кадр} {N} {узел} › {сценарий} {SS.S}`.
  */
-export function formatLiveLine(frame: string, ordinal: number, label: string, labelWidth: number, title: string, step: string | null, elapsed: string, separator: string): string {
+export function formatLiveLine(
+  frame: string,
+  ordinal: number,
+  label: string,
+  labelWidth: number,
+  title: string,
+  step: string | null,
+  elapsed: string,
+  separator: string
+): string {
   const base = `${INDENT}${frame} ${ordinal} ${label.padEnd(labelWidth)} ${separator} ${title}`;
   const withStep = step === null ? base : `${base} ${separator} ${step}`;
   return `${withStep} ${elapsed}`;
@@ -70,9 +90,17 @@ export function formatElapsed(ms: number): string {
   return (Math.max(0, ms) / 1000).toFixed(1);
 }
 
-export function verdictMark(ascii: boolean, status: TestResult['status'], expectedStatus: TestCase['expectedStatus']): { symbol: string; kind: 'ok' | 'skipped' | 'fail'; note: string } {
-  if (status === 'skipped') { return { symbol: '-', kind: 'skipped', note: '' }; }
-  if (status === 'passed' && expectedStatus === 'passed') { return { symbol: ascii ? 'ok' : '✓', kind: 'ok', note: '' }; }
+export function verdictMark(
+  ascii: boolean,
+  status: TestResult['status'],
+  expectedStatus: TestCase['expectedStatus']
+): { symbol: string; kind: 'ok' | 'skipped' | 'fail'; note: string } {
+  if (status === 'skipped') {
+    return { symbol: '-', kind: 'skipped', note: '' };
+  }
+  if (status === 'passed' && expectedStatus === 'passed') {
+    return { symbol: ascii ? 'ok' : '✓', kind: 'ok', note: '' };
+  }
   const note = status === 'timedOut' ? ' (таймаут теста)' : status === 'interrupted' ? ' (прерван)' : '';
   return { symbol: ascii ? 'x' : '✘', kind: 'fail', note };
 }
@@ -80,11 +108,20 @@ export function verdictMark(ascii: boolean, status: TestResult['status'], expect
 export function firstErrorLine(result: TestResult, ascii = false): string | null {
   const fallback = result.errors && result.errors.length > 0 ? result.errors[0] : undefined;
   const error = result.error ? result.error : fallback;
-  if (!error) { return null; }
-  const raw = error.message !== undefined ? error.message : error.value !== undefined ? String(error.value) : '';
-  const line = stripAnsi(raw).split(/\r?\n/).find(l => l.trim().length > 0);
-  if (!line) { return null; }
-  if (line.length <= 200) { return line; }
+  if (!error) {
+    return null;
+  }
+  const raw =
+    error.message !== undefined ? error.message : error.value !== undefined ? String(error.value) : '';
+  const line = stripAnsi(raw)
+    .split(/\r?\n/)
+    .find(l => l.trim().length > 0);
+  if (!line) {
+    return null;
+  }
+  if (line.length <= 200) {
+    return line;
+  }
   // ASCII-профиль: многоточие из ASCII — в cp1251-консоли юникодный `…` дал бы мажибake.
   return ascii ? `${line.slice(0, 200)}...` : `${line.slice(0, 200)}…`;
 }
@@ -95,7 +132,10 @@ export default class LiveReporter implements Reporter {
   private readonly color = this.tty && !process.env.NO_COLOR;
   private readonly sep = this.ascii ? '|' : '›';
   // Порядок вставки = порядок onTestBegin: Map служит и списком живых строк.
-  private readonly active = new Map<TestResult, { ordinal: number; label: string; title: string; step: string | null; startedAt: number }>();
+  private readonly active = new Map<
+    TestResult,
+    { ordinal: number; label: string; title: string; step: string | null; startedAt: number }
+  >();
   private pendingPermanent: string[] = [];
   private liveLinesDrawn = 0;
   private paddedTop = false;
@@ -120,7 +160,10 @@ export default class LiveReporter implements Reporter {
   onBegin(_config: FullConfig, suite: Suite): void {
     this.safe(() => {
       // Шапка прогона не печатается: узлы видны по живым строкам.
-      this.labelWidth = suite.suites.reduce((w, s) => Math.max(w, (s.project() || { name: '' }).name.length), 0);
+      this.labelWidth = suite.suites.reduce(
+        (w, s) => Math.max(w, (s.project() || { name: '' }).name.length),
+        0
+      );
       if (this.tty) {
         process.stdout.on('resize', this.onResize);
         this.timer = setInterval(() => this.safe(() => this.redraw()), 100);
@@ -131,7 +174,13 @@ export default class LiveReporter implements Reporter {
 
   onTestBegin(test: TestCase, result: TestResult): void {
     this.safe(() => {
-      const entry = { ordinal: this.nextOrdinal, label: this.labelFor(test), title: test.title, step: null as string | null, startedAt: Date.now() };
+      const entry = {
+        ordinal: this.nextOrdinal,
+        label: this.labelFor(test),
+        title: test.title,
+        step: null as string | null,
+        startedAt: Date.now()
+      };
       this.nextOrdinal += 1;
       this.labelWidth = Math.max(this.labelWidth, entry.label.length);
       this.active.set(result, entry);
@@ -144,16 +193,21 @@ export default class LiveReporter implements Reporter {
         this.redraw();
         return;
       }
-      process.stdout.write(`${timePrefix()} старт ${entry.ordinal} ${entry.label} ${this.sep} ${entry.title}\n`);
-
+      process.stdout.write(
+        `${timePrefix()} старт ${entry.ordinal} ${entry.label} ${this.sep} ${entry.title}\n`
+      );
     });
   }
 
   onStepBegin(_test: TestCase, result: TestResult, step: TestStep): void {
-    if (step.category !== 'test.step') { return; } // hooks/expect в подпись не попадают
+    if (step.category !== 'test.step') {
+      return;
+    } // hooks/expect в подпись не попадают
     this.safe(() => {
       const entry = this.active.get(result);
-      if (entry) { entry.step = stepCaption(step.title); } // не стирается на onStepEnd
+      if (entry) {
+        entry.step = stepCaption(step.title);
+      } // не стирается на onStepEnd
     });
   }
 
@@ -166,13 +220,21 @@ export default class LiveReporter implements Reporter {
       const title = entry ? entry.title : test.title;
 
       const mark = verdictMark(this.ascii, result.status, test.expectedStatus);
-      if (mark.kind === 'ok') { this.okCount += 1; } else if (mark.kind === 'skipped') { this.skippedCount += 1; } else { this.xCount += 1; }
+      if (mark.kind === 'ok') {
+        this.okCount += 1;
+      } else if (mark.kind === 'skipped') {
+        this.skippedCount += 1;
+      } else {
+        this.xCount += 1;
+      }
 
       // Строка собирается в plain, обрезается, потом окрашивается: ANSI-коды ширину не сбивают.
       // Отступ слева — только TTY-профиль: plain-лог с якорем времени не меняем.
       const symbolPlain = mark.symbol.padEnd(this.ascii ? 2 : 1);
       let plain = `${symbolPlain} ${ordinal} ${label} ${this.sep} ${title}`;
-      if (mark.kind !== 'skipped') { plain += ` (${(result.duration / 1000).toFixed(1)}с)`; }
+      if (mark.kind !== 'skipped') {
+        plain += ` (${(result.duration / 1000).toFixed(1)}с)`;
+      }
       plain += mark.note;
       plain = this.clip(this.tty ? `${INDENT}${plain}` : plain); // перенос постоянной строки сломал бы подсчёт рядов живой области
       const symbolStart = this.tty ? INDENT.length : 0;
@@ -187,23 +249,39 @@ export default class LiveReporter implements Reporter {
         const text = this.clip(this.tty ? `${INDENT}    ${errLine}` : `    ${errLine}`);
         this.printPermanent(this.color ? `${SGR_RED}${text}${SGR_RESET}` : text);
       }
-      if (this.tty) { this.printPermanent(''); }
+      if (this.tty) {
+        this.printPermanent('');
+      }
     });
   }
 
-  onStdOut(chunk: string | Buffer): void { this.emitChunk(chunk, false); }
-  onStdErr(chunk: string | Buffer): void { this.emitChunk(chunk, true); }
+  onStdOut(chunk: string | Buffer): void {
+    this.emitChunk(chunk, false);
+  }
+  onStdErr(chunk: string | Buffer): void {
+    this.emitChunk(chunk, true);
+  }
   onError(error: TestError): void {
     this.safe(() => {
-      const raw = error.stack ? error.stack : error.message !== undefined ? error.message : error.value !== undefined ? String(error.value) : '';
+      const raw = error.stack
+        ? error.stack
+        : error.message !== undefined
+          ? error.message
+          : error.value !== undefined
+            ? String(error.value)
+            : '';
       this.printPermanent('ОШИБКА:');
-      for (const line of stripAnsi(raw).split(/\r?\n/)) { this.printPermanent(this.clip(line)); }
+      for (const line of stripAnsi(raw).split(/\r?\n/)) {
+        this.printPermanent(this.clip(line));
+      }
     });
   }
 
   onEnd(result: FullResult): void {
     // Таймер останавливается первым делом и вне safe() — в любом случае.
-    if (this.timer) { clearInterval(this.timer); }
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
     this.timer = null;
     process.stdout.off('resize', this.onResize);
     this.safe(() => {
@@ -214,10 +292,19 @@ export default class LiveReporter implements Reporter {
         this.applyResizeReset();
       }
       this.eraseLiveArea();
-      if (this.tty) { this.printPermanent(''); } // padding перед сводкой
+      if (this.tty) {
+        this.printPermanent('');
+      } // padding перед сводкой
       const parts = [`${this.okCount} ok`, `${this.xCount} x`];
-      if (this.skippedCount > 0) { parts.push(`${this.skippedCount} пропущено`); }
-      const note = result.status === 'interrupted' ? ' (прервано)' : result.status === 'timedout' ? ' (глобальный таймаут)' : '';
+      if (this.skippedCount > 0) {
+        parts.push(`${this.skippedCount} пропущено`);
+      }
+      const note =
+        result.status === 'interrupted'
+          ? ' (прервано)'
+          : result.status === 'timedout'
+            ? ' (глобальный таймаут)'
+            : '';
       process.stdout.write(`Готово за ${(result.duration / 1000).toFixed(1)}с: ${parts.join(', ')}${note}\n`);
     });
   }
@@ -225,11 +312,14 @@ export default class LiveReporter implements Reporter {
   // conhost reflow'ит буфер при смене ширины: счётчик рядов перестаёт соответствовать экрану,
   // стирать её механизмом ресайза нельзя. Сброс дебаунсится: событий много, реакция — одна
   // (redraw), после тишины (см. RESIZE_QUIET_MS).
-  private readonly onResize = (): void => this.safe(() => {
-    if (!this.tty) { return; }
-    this.resizePending = true;
-    this.lastResizeAt = Date.now();
-  });
+  private readonly onResize = (): void =>
+    this.safe(() => {
+      if (!this.tty) {
+        return;
+      }
+      this.resizePending = true;
+      this.lastResizeAt = Date.now();
+    });
 
   /**
    * Стирание живой области после драга. Пока драг шёл, redraw молчал — курсор стоит сразу
@@ -241,7 +331,9 @@ export default class LiveReporter implements Reporter {
   private applyResizeReset(): void {
     const columns = process.stdout.columns || 80;
     let rows = 0;
-    for (const len of this.lastFrameLengths) { rows += Math.max(1, Math.ceil(len / columns)); }
+    for (const len of this.lastFrameLengths) {
+      rows += Math.max(1, Math.ceil(len / columns));
+    }
     if (rows > 0) {
       process.stdout.write(`\u001B[${rows}A` + '\r\u001B[2K\n'.repeat(rows) + `\u001B[${rows}A`);
     }
@@ -260,7 +352,9 @@ export default class LiveReporter implements Reporter {
 
   private labelFor(test: TestCase): string {
     const project = test.parent.project();
-    if (project && project.name) { return project.name; }
+    if (project && project.name) {
+      return project.name;
+    }
     const segments = test.titlePath().filter(Boolean);
     return segments.length > 0 ? segments[0] : test.title;
   }
@@ -295,7 +389,9 @@ export default class LiveReporter implements Reporter {
   }
 
   private colorize(text: string, kind: 'ok' | 'skipped' | 'fail'): string {
-    if (!this.color) { return text; }
+    if (!this.color) {
+      return text;
+    }
     const code = kind === 'ok' ? SGR_GREEN : kind === 'fail' ? SGR_RED : SGR_DIM;
     return `${code}${text}${SGR_RESET}`;
   }
@@ -303,10 +399,14 @@ export default class LiveReporter implements Reporter {
   // Кадр живой области: подняться на число нарисованных строк, напечатать постоянные
   // и живые, лишние стереть. Подмножество CSI как у встроенного list-reporter'а.
   private redraw(): void {
-    if (!this.tty) { return; }
+    if (!this.tty) {
+      return;
+    }
     if (this.resizePending) {
       // Драг продолжается: в reflow'ящийся буфер не рисуем — каждый кадр встал бы на новый ряд.
-      if (Date.now() - this.lastResizeAt < RESIZE_QUIET_MS) { return; }
+      if (Date.now() - this.lastResizeAt < RESIZE_QUIET_MS) {
+        return;
+      }
       this.resizePending = false;
       this.applyResizeReset();
     }
@@ -317,33 +417,60 @@ export default class LiveReporter implements Reporter {
     const hidden = this.active.size - visible.length;
 
     const liveLines = visible.map(entry => this.renderLiveLine(entry, width));
-    if (hidden > 0) { liveLines.push(truncate(`${INDENT}${this.ascii ? `... ещё ${hidden}` : `… ещё ${hidden}`}`, width)); }
+    if (hidden > 0) {
+      liveLines.push(truncate(`${INDENT}${this.ascii ? `... ещё ${hidden}` : `… ещё ${hidden}`}`, width));
+    }
     // Видимые длины кадра: сброс при ресайзе пересчитывает ряды после reflow (см. applyResizeReset).
     this.lastFrameLengths = liveLines.map(l => stripAnsi(l).length);
 
     let out = this.liveLinesDrawn > 0 ? `\u001B[${this.liveLinesDrawn}A` : '';
-    for (const p of this.pendingPermanent) { out += `\r\u001B[2K${p}\n`; }
+    for (const p of this.pendingPermanent) {
+      out += `\r\u001B[2K${p}\n`;
+    }
     this.pendingPermanent = [];
-    for (const l of liveLines) { out += `\r\u001B[2K${l}\n`; }
+    for (const l of liveLines) {
+      out += `\r\u001B[2K${l}\n`;
+    }
     const deficit = this.liveLinesDrawn - liveLines.length;
-    if (deficit > 0) { out += '\r\u001B[2K\n'.repeat(deficit) + `\u001B[${deficit}A`; }
+    if (deficit > 0) {
+      out += '\r\u001B[2K\n'.repeat(deficit) + `\u001B[${deficit}A`;
+    }
     this.liveLinesDrawn = liveLines.length;
     process.stdout.write(out);
   }
 
-  private renderLiveLine(entry: { ordinal: number; label: string; title: string; step: string | null; startedAt: number }, width: number): string {
+  private renderLiveLine(
+    entry: { ordinal: number; label: string; title: string; step: string | null; startedAt: number },
+    width: number
+  ): string {
     const frames = this.ascii ? ASCII_SPINNER : BRAILLE_SPINNER;
     const frame = frames[this.frameIndex % frames.length];
     const elapsed = formatElapsed(Date.now() - entry.startedAt);
-    const plain = truncate(formatLiveLine(frame, entry.ordinal, entry.label, this.labelWidth, entry.title, entry.step, elapsed, this.sep), width);
-    if (!this.color) { return plain; }
+    const plain = truncate(
+      formatLiveLine(
+        frame,
+        entry.ordinal,
+        entry.label,
+        this.labelWidth,
+        entry.title,
+        entry.step,
+        elapsed,
+        this.sep
+      ),
+      width
+    );
+    if (!this.color) {
+      return plain;
+    }
     // Тусклый только кадр спиннера: он идёт после INDENT, а не в колонке 0.
     return `${plain.slice(0, INDENT.length)}${SGR_DIM}${plain.slice(INDENT.length, INDENT.length + 1)}${SGR_RESET}${plain.slice(INDENT.length + 1)}`;
   }
 
   /** Финальная очистка: курсор не должен «застревать» в конце живой строки. */
   private eraseLiveArea(): void {
-    if (!this.tty || this.liveLinesDrawn === 0) { return; }
+    if (!this.tty || this.liveLinesDrawn === 0) {
+      return;
+    }
     const count = this.liveLinesDrawn;
     process.stdout.write(`\u001B[${count}A` + '\r\u001B[2K\n'.repeat(count) + `\u001B[${count}A`);
     this.liveLinesDrawn = 0;

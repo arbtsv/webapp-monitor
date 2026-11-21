@@ -20,13 +20,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import {
-  BUNDLE_ROOT,
-  FAIL_VERDICT,
-  HARNESS_FAILURE,
-  envWithoutMonitor,
-  runStep,
-} from './run-lib.mjs';
+import { BUNDLE_ROOT, FAIL_VERDICT, HARNESS_FAILURE, envWithoutMonitor, runStep } from './run-lib.mjs';
 
 const PREFIX = '[run-smoke]';
 
@@ -56,13 +50,10 @@ async function main() {
   // Только MONITOR_ARTIFACTS: MONITOR_CONFIG или MONITOR_CSV оболочки исказили бы отчёт.
   const reportEnv = envWithoutMonitor();
   reportEnv.MONITOR_ARTIFACTS = SMOKE_ARTIFACTS;
-  return runStep(
-    PREFIX,
-    'шаг 2 (report.mjs)',
-    [path.join(BUNDLE_ROOT, 'scripts', 'report.mjs')],
-    reportEnv,
-    { code: 0, marker: FAIL_VERDICT }
-  );
+  return runStep(PREFIX, 'шаг 2 (report.mjs)', [path.join(BUNDLE_ROOT, 'scripts', 'report.mjs')], reportEnv, {
+    code: 0,
+    marker: FAIL_VERDICT
+  });
 }
 
 // Итог — только через process.exitCode: немедленное завершение на Windows обрезает

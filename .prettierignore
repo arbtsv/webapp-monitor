@@ -1,0 +1,10 @@
+# Батники: cmd-специфика и принудительный CRLF (.gitattributes) —
+# форматтером не проходят.
+*.bat
+
+# Генерируемое и ставится извне: форматировать нечего.
+package-lock.json
+node/
+node_modules/
+artifacts/
+.install-tmp/

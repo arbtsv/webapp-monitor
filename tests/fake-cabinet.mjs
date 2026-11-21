@@ -1,5 +1,5 @@
 /**
- * Фиктивный кабинет олимпиад школьников: настоящие `specs/olymp-first-round.spec.ts` и
+ * Фиктивный веб-кабинет: настоящие `specs/cabinet-first-round.spec.ts` и
  * `monitor.bat` бандла проходят через него без сети.
  * Только встроенные модули Node; разметка повторяет форму входа реального кабинета
  * (узел статуса `.officeAuthorizationStatus` вне <form>, класс `red`/`blue` для
@@ -61,7 +61,7 @@ const NODE_BEHAVIOR = {
   slowAlways: { delay: 'always', broken: false, loginErr: false },
   slowOnceBroken: { delay: 'once', broken: true, loginErr: false },
   loginErr: { delay: 'never', broken: false, loginErr: true },
-  stalled: { delay: 'stall', broken: false, loginErr: false },
+  stalled: { delay: 'stall', broken: false, loginErr: false }
 };
 
 const requestCounts = new Map();
@@ -167,22 +167,22 @@ function renderPage(node, behavior) {
       section.setAttribute('data-qual-stage', qualStage);
       var tree = document.createElement('div');
       tree.setAttribute('data-testid', 'olymp-round-tree');
-      tree.textContent = 'Дерево олимпиад';
+      tree.textContent = 'Дерево раздела';
       section.appendChild(tree);
       var list = document.createElement('div');
       list.setAttribute('data-testid', 'olymp-exam-list');
-      // Таблица дня X рисуется тоже: сценарии olymp-dayx и olymp-second-dayx ждут
+      // Таблица дня X рисуется тоже: сценарии cabinet-dayx и cabinet-second-dayx ждут
       // именно её — на фиктивном кабинете все поставляемые сценарии должны проходить.
       var dayx = document.createElement('div');
       dayx.setAttribute('data-testid', 'olymp-dayx-table');
       for (var j = 0; j < 2; j += 1) {
         var item = document.createElement('div');
         item.setAttribute('data-testid', 'olymp-exam-item');
-        item.textContent = 'Состязание ' + (j + 1);
+        item.textContent = 'Запись ' + (j + 1);
         list.appendChild(item);
         var dayxItem = document.createElement('div');
         dayxItem.setAttribute('data-testid', 'olymp-exam-item');
-        dayxItem.textContent = 'Состязание дня X ' + (j + 1);
+        dayxItem.textContent = 'Запись дня X ' + (j + 1);
         dayx.appendChild(dayxItem);
       }
       section.appendChild(list);
@@ -269,7 +269,7 @@ function runMonitor(args, answer) {
     cwd: BUNDLE_ROOT,
     env,
     windowsVerbatimArguments: true,
-    stdio: [answer === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit'],
+    stdio: [answer === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit']
   });
   child.on('error', e => {
     console.error(`[fake-cabinet] cmd.exe не запустился: ${e.message}`);
@@ -331,7 +331,9 @@ function parseArgs(argv) {
   if (mode === '--explorer') {
     const raw = rest.shift();
     if (!raw || raw.includes('=')) {
-      return { error: 'не задана клавиша для финальной паузы (enter или текст) — она идёт перед ИМЯ=ЗНАЧЕНИЕ' };
+      return {
+        error: 'не задана клавиша для финальной паузы (enter или текст) — она идёт перед ИМЯ=ЗНАЧЕНИЕ'
+      };
     }
     answer = raw === 'enter' ? '\r\n' : `${raw}\r\n`;
   }

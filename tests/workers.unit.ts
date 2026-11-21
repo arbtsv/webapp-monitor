@@ -24,19 +24,19 @@ test('resolveMonitorWorkers: целое в пределах — без пред�
 test('resolveMonitorWorkers: целое сверх предела — урезание с предупреждением', () => {
   expect(resolveMonitorWorkers('7', CPU)).toEqual({
     workers: MAX,
-    warning: 'MONITOR_WORKERS=7 урезано до 6 (логических процессоров: 12)',
+    warning: 'MONITOR_WORKERS=7 урезано до 6 (логических процессоров: 12)'
   });
   // Запрошено столько же, сколько логических процессоров: урезание до половины.
   expect(resolveMonitorWorkers('12', CPU)).toEqual({
     workers: MAX,
-    warning: 'MONITOR_WORKERS=12 урезано до 6 (логических процессоров: 12)',
+    warning: 'MONITOR_WORKERS=12 урезано до 6 (логических процессоров: 12)'
   });
 });
 
 test('resolveMonitorWorkers: проценты — пересчёт выражением Playwright, предел на результат', () => {
   expect(resolveMonitorWorkers('100%', CPU)).toEqual({
     workers: MAX,
-    warning: 'MONITOR_WORKERS=100% урезано до 6 (логических процессоров: 12)',
+    warning: 'MONITOR_WORKERS=100% урезано до 6 (логических процессоров: 12)'
   });
   expect(resolveMonitorWorkers('50%', CPU)).toEqual({ workers: 6, warning: null }); // ровно предел
   expect(resolveMonitorWorkers('25%', CPU)).toEqual({ workers: 3, warning: null });
@@ -46,7 +46,7 @@ test('resolveMonitorWorkers: проценты — пересчёт выраже�
 test('resolveMonitorWorkers: пробелы вокруг значения обрезаются, в предупреждении — без них', () => {
   expect(resolveMonitorWorkers(' 7 ', CPU)).toEqual({
     workers: MAX,
-    warning: 'MONITOR_WORKERS=7 урезано до 6 (логических процессоров: 12)',
+    warning: 'MONITOR_WORKERS=7 урезано до 6 (логических процессоров: 12)'
   });
 });
 
@@ -67,7 +67,7 @@ test('resolveMonitorWorkers: cpuCount = 1', () => {
   expect(resolveMonitorWorkers('1', 1)).toEqual({ workers: 1, warning: null });
   expect(resolveMonitorWorkers('2', 1)).toEqual({
     workers: 1,
-    warning: 'MONITOR_WORKERS=2 урезано до 1 (логических процессоров: 1)',
+    warning: 'MONITOR_WORKERS=2 урезано до 1 (логических процессоров: 1)'
   });
   expect(resolveMonitorWorkers('100%', 1)).toEqual({ workers: 1, warning: null });
 });
@@ -79,7 +79,7 @@ test('resolveMonitorWorkers: реальное число процессоров 
   expect(resolveMonitorWorkers(String(max), cpu)).toEqual({ workers: max, warning: null });
   expect(resolveMonitorWorkers(String(max + 1), cpu)).toEqual({
     workers: max,
-    warning: `MONITOR_WORKERS=${max + 1} урезано до ${max} (логических процессоров: ${cpu})`,
+    warning: `MONITOR_WORKERS=${max + 1} урезано до ${max} (логических процессоров: ${cpu})`
   });
   const hundred = resolveMonitorWorkers('100%', cpu);
   expect(hundred.workers).toBe(max);

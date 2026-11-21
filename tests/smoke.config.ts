@@ -12,5 +12,5 @@ import realConfig from '../playwright.config';
 
 export default defineConfig(realConfig, {
   testDir: __dirname,
-  testMatch: '*.smoke.ts',
+  testMatch: '*.smoke.ts'
 });

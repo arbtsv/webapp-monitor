@@ -1,2 +1,5 @@
+# Все текстовые файлы — LF: prettier (endOfLine: lf по умолчанию) и раннеры
+# с autocrlf иначе дают ложный красный `prettier --check`.
+* text=auto eol=lf
 # cmd требует CRLF
 *.bat text eol=crlf

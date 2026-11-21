@@ -36,9 +36,13 @@ function run(dir: string, args: string[], input = '') {
   const r = spawnSync('node', [SCRIPT, ...args], {
     input,
     encoding: 'utf-8',
-    env: { ...process.env, MONITOR_ARTIFACTS: dir },
+    env: { ...process.env, MONITOR_ARTIFACTS: dir }
   });
-  return { code: r.status, out: `${r.stdout}${r.stderr}`, left: fs.existsSync(dir) ? fs.readdirSync(dir).sort() : [] };
+  return {
+    code: r.status,
+    out: `${r.stdout}${r.stderr}`,
+    left: fs.existsSync(dir) ? fs.readdirSync(dir).sort() : []
+  };
 }
 
 test('--days 30 --yes: удаляет только архив старше срока', () => {
@@ -64,7 +68,7 @@ test('неверный срок: код 2, ничего не удалено', ()
   for (const [name, args, input] of [
     ['bad-input', [], 'abc\n'],
     ['bad-arg', ['--days', '-5', '--yes'], ''],
-    ['bad-arg-empty', ['--days'], ''],
+    ['bad-arg-empty', ['--days'], '']
   ] as const) {
     const r = run(fixture(name), [...args], input);
     expect(r.code, name).toBe(2);
@@ -80,8 +84,18 @@ test('нечего удалять: код 0 и сообщение', () => {
 });
 
 test('--days=N и ответ «д» на подтверждение', () => {
-  expect(run(fixture('eq-form'), ['--days=30', '--yes']).left).toEqual(['report.zip', 'report_dir.zip', 'report_new.zip', 'report_old20.zip']);
-  expect(run(fixture('ru-yes'), ['--days', '30'], 'д\n').left).toEqual(['report.zip', 'report_dir.zip', 'report_new.zip', 'report_old20.zip']);
+  expect(run(fixture('eq-form'), ['--days=30', '--yes']).left).toEqual([
+    'report.zip',
+    'report_dir.zip',
+    'report_new.zip',
+    'report_old20.zip'
+  ]);
+  expect(run(fixture('ru-yes'), ['--days', '30'], 'д\n').left).toEqual([
+    'report.zip',
+    'report_dir.zip',
+    'report_new.zip',
+    'report_old20.zip'
+  ]);
 });
 
 test('--yes без --days: код 2, подтверждение не пропускается', () => {
