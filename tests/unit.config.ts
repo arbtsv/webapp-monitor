@@ -12,5 +12,5 @@ export default defineConfig({
   reporter: 'line',
   workers: 1,
   // Иначе Playwright резолвит outputDir от текущего каталога процесса.
-  outputDir: path.join(__dirname, '..', 'artifacts', '_dev', 'unit-output'),
+  outputDir: path.join(__dirname, '..', 'artifacts', '_dev', 'unit-output')
 });

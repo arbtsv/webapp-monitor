@@ -46,7 +46,7 @@ export function resolveMonitorWorkers(raw: string | undefined, cpuCount: number)
   if (requested > max) {
     return {
       workers: max,
-      warning: `MONITOR_WORKERS=${trimmed} урезано до ${max} (логических процессоров: ${cpuCount})`,
+      warning: `MONITOR_WORKERS=${trimmed} урезано до ${max} (логических процессоров: ${cpuCount})`
     };
   }
   return { workers: requested, warning: null };

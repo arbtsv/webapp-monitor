@@ -127,11 +127,11 @@ export function consentFromAnswer(answer, defaultYes = false) {
 
 /** Спросить согласие в интерактивной консоли: Enter — defaultYes, EOF/иное — «нет». */
 function askConsent(question, stdin, defaultYes = false) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     process.stdout.write(question);
     let buf = '';
     stdin.setEncoding('utf8');
-    stdin.on('data', (chunk) => {
+    stdin.on('data', chunk => {
       buf += chunk;
       const nl = buf.search(/[\r\n]/);
       if (nl !== -1) {
@@ -152,7 +152,7 @@ function askConsent(question, stdin, defaultYes = false) {
  */
 export function wipe(bundleRoot, t) {
   const pkgPath = path.join(bundleRoot, 'package.json');
-  let pkgText = null;
+  let pkgText;
   try {
     pkgText = fs.readFileSync(pkgPath, 'utf-8');
   } catch {
@@ -176,7 +176,7 @@ export function wipe(bundleRoot, t) {
   }
   for (const [name, busyKey] of [
     ['node', 'wipe.node-busy'],
-    ['node_modules', 'wipe.node-modules-busy'],
+    ['node_modules', 'wipe.node-modules-busy']
   ]) {
     const target = path.join(bundleRoot, name);
     if (fs.existsSync(target)) {
@@ -197,12 +197,7 @@ export function wipe(bundleRoot, t) {
 /** Браузер из .install-tmp\ на место, если его место пусто (переждал npm ci). */
 function restoreLocalBrowsers(bundleRoot) {
   const saved = path.join(bundleRoot, '.install-tmp', 'local-browsers');
-  const place = path.join(
-    bundleRoot,
-    'node_modules',
-    'playwright-core',
-    '.local-browsers'
-  );
+  const place = path.join(bundleRoot, 'node_modules', 'playwright-core', '.local-browsers');
   if (!fs.existsSync(saved)) {
     return;
   }
@@ -223,12 +218,7 @@ function restoreLocalBrowsers(bundleRoot) {
 
 /** Спрятать локальный браузер в .install-tmp\ перед npm ci. */
 function stashLocalBrowsers(bundleRoot) {
-  const place = path.join(
-    bundleRoot,
-    'node_modules',
-    'playwright-core',
-    '.local-browsers'
-  );
+  const place = path.join(bundleRoot, 'node_modules', 'playwright-core', '.local-browsers');
   const saved = path.join(bundleRoot, '.install-tmp', 'local-browsers');
   if (!fs.existsSync(place)) {
     return;
@@ -245,10 +235,10 @@ function stashLocalBrowsers(bundleRoot) {
 
 /** Выполнить команду с выводом в консоль; вернуть код выхода. */
 function run(cmd, args, options) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const child = spawn(cmd, args, { stdio: 'inherit', ...options });
     child.on('error', () => resolve(1));
-    child.on('close', (code) => resolve(code === null ? 1 : code));
+    child.on('close', code => resolve(code === null ? 1 : code));
   });
 }
 
@@ -272,14 +262,23 @@ async function downloadNode(bundleRoot, base, t) {
       ...extra,
       '-o',
       out,
-      url,
+      url
     ]);
 
   console.log(`[install] ${t('step.node-start', NODE_VERSION)}`);
-  if ((await curl(path.join(downloadDir, 'SHASUMS256.txt'), `${base}/v${NODE_VERSION}/SHASUMS256.txt`, '-sS')) !== 0) {
+  if (
+    (await curl(
+      path.join(downloadDir, 'SHASUMS256.txt'),
+      `${base}/v${NODE_VERSION}/SHASUMS256.txt`,
+      '-sS'
+    )) !== 0
+  ) {
     return fail(t, t('step.node-download-failed', 'SHASUMS256.txt'));
   }
-  if ((await curl(path.join(downloadDir, archive), `${base}/v${NODE_VERSION}/${archive}`, '--progress-bar')) !== 0) {
+  if (
+    (await curl(path.join(downloadDir, archive), `${base}/v${NODE_VERSION}/${archive}`, '--progress-bar')) !==
+    0
+  ) {
     return fail(t, t('step.node-download-failed', archive));
   }
 
@@ -439,9 +438,7 @@ export async function runInstall(argv, io = {}) {
       console.log(`[install] ${t('plan.item-npm')}`);
     }
     if (showBrowser) {
-      console.log(
-        `[install] ${t(showNpm ? 'plan.item-browser-maybe' : 'plan.item-browser')}`
-      );
+      console.log(`[install] ${t(showNpm ? 'plan.item-browser-maybe' : 'plan.item-browser')}`);
     }
     console.log(`[install] ${t('plan.into', bundleRoot)}`);
     const consent = await askConsent(t('consent.ask'), stdin, true); // Enter — согласие: раскладка не важна
@@ -474,7 +471,7 @@ export async function runInstall(argv, io = {}) {
     // npm.cmd — батник: без shell CreateProcess его не поднимает.
     const npmRc = await run('npm.cmd', ['ci', '--include=dev', '--no-audit', '--no-fund'], {
       shell: true,
-      env: { ...process.env, PATH: `${path.join(bundleRoot, 'node')};${process.env.PATH}` },
+      env: { ...process.env, PATH: `${path.join(bundleRoot, 'node')};${process.env.PATH}` }
     });
     restoreLocalBrowsers(bundleRoot);
     if (npmRc !== 0) {
@@ -490,7 +487,12 @@ export async function runInstall(argv, io = {}) {
     console.log(`[install] ${t('step.browser-start')}`);
     const browserRc = await run(
       process.execPath,
-      [path.join(bundleRoot, 'node_modules', '@playwright', 'test', 'cli.js'), 'install', '--only-shell', 'chromium'],
+      [
+        path.join(bundleRoot, 'node_modules', '@playwright', 'test', 'cli.js'),
+        'install',
+        '--only-shell',
+        'chromium'
+      ],
       { env: process.env }
     );
     if (browserRc !== 0) {
@@ -510,10 +512,10 @@ export async function runInstall(argv, io = {}) {
 // Импорт из тестов не должен запускать установку: main только при прямом запуске.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   runInstall(process.argv.slice(2)).then(
-    (rc) => {
+    rc => {
       process.exitCode = rc;
     },
-    (err) => {
+    err => {
       console.error(err);
       process.exitCode = 1;
     }

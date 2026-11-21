@@ -18,7 +18,7 @@ from pathlib import Path
 
 _BUNDLE = Path(__file__).parent.parent
 
-_EXPORT_RE = re.compile(r"^export const (\w+) = (.+);$", re.M)
+_EXPORT_RE = re.compile(r"^export const (\w+) = (.+);$", re.MULTILINE)
 
 # Разные по построению, не дрейф: ESM import.meta.url в common.mjs против CJS
 # __dirname в helpers/config.ts.
@@ -41,13 +41,12 @@ def _exports(text: str) -> dict[str, str]:
     """Однострочные `export const NAME = RHS;`; хвост ` as const` снят с RHS.
 
     Многострочные объявления (массив `ENTRY_RESERVE_RUNS_COLUMNS`, объект
-    `OLYMP_METRIC_LABELS`) и типизированные (`NAME: Type = ...`) не захватываются:
+    `SCENARIO_METRIC_LABELS`) и типизированные (`NAME: Type = ...`) не захватываются:
     регэксп разбирает только однострочный экспорт без аннотации типа.
     """
     result: dict[str, str] = {}
     for name, rhs in _EXPORT_RE.findall(text):
-        if rhs.endswith(" as const"):
-            rhs = rhs[: -len(" as const")]
+        rhs = rhs.removesuffix(" as const")
         result[name] = rhs
     return result
 

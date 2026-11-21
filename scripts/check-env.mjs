@@ -86,7 +86,7 @@ function checkDeps(bundleRoot) {
     if (entry.optional && !fs.existsSync(dir)) {
       continue;
     }
-    var installedVersion = null;
+    var installedVersion;
     try {
       installedVersion = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).version;
     } catch {
@@ -130,7 +130,14 @@ function checkBrowser(bundleRoot) {
     return fs.existsSync(explicitMarker) ? 'global' : 'missing';
   }
 
-  var localMarker = path.join(bundleRoot, 'node_modules', 'playwright-core', '.local-browsers', dirName, 'INSTALLATION_COMPLETE');
+  var localMarker = path.join(
+    bundleRoot,
+    'node_modules',
+    'playwright-core',
+    '.local-browsers',
+    dirName,
+    'INSTALLATION_COMPLETE'
+  );
   if (fs.existsSync(localMarker)) {
     return 'local';
   }
@@ -139,7 +146,8 @@ function checkBrowser(bundleRoot) {
   }
 
   var localAppData = process.env.LOCALAPPDATA;
-  var localAppDataBase = localAppData && localAppData !== '' ? localAppData : path.join(os.homedir(), 'AppData', 'Local');
+  var localAppDataBase =
+    localAppData && localAppData !== '' ? localAppData : path.join(os.homedir(), 'AppData', 'Local');
   var globalMarker = path.join(localAppDataBase, 'ms-playwright', dirName, 'INSTALLATION_COMPLETE');
   return fs.existsSync(globalMarker) ? 'global' : 'missing';
 }

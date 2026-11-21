@@ -17,13 +17,20 @@ import LiveReporter, {
   formatLiveLine,
   formatElapsed,
   verdictMark,
-  firstErrorLine,
+  firstErrorLine
 } from '../reporters/live';
-import type { FullConfig, FullResult, Suite, TestCase, TestResult, TestStep } from '@playwright/test/reporter';
+import type {
+  FullConfig,
+  FullResult,
+  Suite,
+  TestCase,
+  TestResult,
+  TestStep
+} from '@playwright/test/reporter';
 
 test('stepCaption: часть до первого `:`', () => {
   expect(stepCaption('Страница входа: поле логина')).toBe('Страница входа');
-  expect(stepCaption('Кабинет: дерево олимпиад: развернуть')).toBe('Кабинет');
+  expect(stepCaption('Кабинет: дерево раздела: развернуть')).toBe('Кабинет');
 });
 
 test('stepCaption: без `:` — заголовок как есть', () => {
@@ -35,14 +42,14 @@ test('stepCaption: пустая до-часть — заголовок как е
 });
 
 test('formatLiveLine: состав `{кадр} {N} {узел} › {сценарий} › {шаг} {SS.S}`, с левым отступом', () => {
-  expect(formatLiveLine('⠋', 1, 'srv-prod', 8, 'кабинет олимпиад', 'Страница входа', '7.3', '›')).toBe(
-    '  ⠋ 1 srv-prod › кабинет олимпиад › Страница входа 7.3'
+  expect(formatLiveLine('⠋', 1, 'srv-prod', 8, 'веб-кабинет', 'Страница входа', '7.3', '›')).toBe(
+    '  ⠋ 1 srv-prod › веб-кабинет › Страница входа 7.3'
   );
 });
 
 test('formatLiveLine: до первого шага шаг опускается, счётчик времени — нет', () => {
-  expect(formatLiveLine('|', 2, 'srv-prod', 8, 'кабинет олимпиад', null, '7.3', '|')).toBe(
-    '  | 2 srv-prod | кабинет олимпиад 7.3'
+  expect(formatLiveLine('|', 2, 'srv-prod', 8, 'веб-кабинет', null, '7.3', '|')).toBe(
+    '  | 2 srv-prod | веб-кабинет 7.3'
   );
 });
 
@@ -73,15 +80,26 @@ test('verdictMark: исходы', () => {
   expect(verdictMark(true, 'passed', 'passed')).toEqual({ symbol: 'ok', kind: 'ok', note: '' });
   expect(verdictMark(false, 'failed', 'passed')).toEqual({ symbol: '✘', kind: 'fail', note: '' });
   expect(verdictMark(true, 'failed', 'passed')).toEqual({ symbol: 'x', kind: 'fail', note: '' });
-  expect(verdictMark(false, 'timedOut', 'passed')).toEqual({ symbol: '✘', kind: 'fail', note: ' (таймаут теста)' });
-  expect(verdictMark(false, 'interrupted', 'passed')).toEqual({ symbol: '✘', kind: 'fail', note: ' (прерван)' });
+  expect(verdictMark(false, 'timedOut', 'passed')).toEqual({
+    symbol: '✘',
+    kind: 'fail',
+    note: ' (таймаут теста)'
+  });
+  expect(verdictMark(false, 'interrupted', 'passed')).toEqual({
+    symbol: '✘',
+    kind: 'fail',
+    note: ' (прерван)'
+  });
   expect(verdictMark(false, 'skipped', 'passed')).toEqual({ symbol: '-', kind: 'skipped', note: '' });
   // expectedStatus !== 'passed' — не-ok исход даже при совпадении статуса.
   expect(verdictMark(false, 'failed', 'failed').kind).toBe('fail');
 });
 
 test('firstErrorLine: ANSI очищается, берётся первая непустая строка', () => {
-  const result = { error: { message: '\u001B[31mTimeout\u001B[0m\n\n  locator: x' }, errors: [] } as unknown as TestResult;
+  const result = {
+    error: { message: '\u001B[31mTimeout\u001B[0m\n\n  locator: x' },
+    errors: []
+  } as unknown as TestResult;
   expect(firstErrorLine(result)).toBe('Timeout');
 });
 
@@ -131,7 +149,10 @@ interface ReporterState {
   lastFrameLengths: number[];
   onResize: () => void;
   redraw: () => void;
-  active: Map<TestResult, { ordinal: number; label: string; title: string; step: string | null; startedAt: number }>;
+  active: Map<
+    TestResult,
+    { ordinal: number; label: string; title: string; step: string | null; startedAt: number }
+  >;
 }
 
 function makeReporter(): LiveReporter {
@@ -150,11 +171,11 @@ function stateOf(reporter: LiveReporter): ReporterState {
 
 function makeTest(overrides: Partial<TestCase> = {}): TestCase {
   return {
-    title: 'кабинет олимпиад',
+    title: 'веб-кабинет',
     expectedStatus: 'passed',
     parent: { project: () => ({ name: 'srv-prod' }) },
-    titlePath: () => ['', 'srv-prod', 'кабинет олимпиад'],
-    ...overrides,
+    titlePath: () => ['', 'srv-prod', 'веб-кабинет'],
+    ...overrides
   } as unknown as TestCase;
 }
 
@@ -188,13 +209,13 @@ test('onTestBegin: сквозной номер с 1, старт-строка б�
   const out = captureStdout(() => {
     reporter.onTestBegin(makeTest(), makeResult());
     reporter.onTestBegin(
-      makeTest({ title: 'второй', titlePath: () => ['', 'specs\\olymp.spec.ts:8:5', 'второй'] }),
+      makeTest({ title: 'второй', titlePath: () => ['', 'specs\\cabinet.spec.ts:8:5', 'второй'] }),
       makeResult()
     );
   });
-  expect(out).toContain('старт 1 srv-prod › кабинет олимпиад');
+  expect(out).toContain('старт 1 srv-prod › веб-кабинет');
   expect(out).toContain('старт 2 srv-prod › второй');
-  expect(out).not.toContain('olymp.spec.ts:8:5');
+  expect(out).not.toContain('cabinet.spec.ts:8:5');
   // plain-профиль: ни одного байта ANSI и `\r`.
   expect(out).not.toContain('\u001B');
   expect(out).not.toContain('\r');
@@ -208,9 +229,13 @@ test('onStepBegin: только test.step; подпись сохраняется
   reporter.onStepBegin(makeTest(), result, makeStep('hook', 'beforeEach'));
   expect(stateOf(reporter).active.get(result) ? stateOf(reporter).active.get(result)!.step : null).toBeNull();
   reporter.onStepBegin(makeTest(), result, makeStep('test.step', 'Страница входа: поле'));
-  expect(stateOf(reporter).active.get(result) ? stateOf(reporter).active.get(result)!.step : null).toBe('Страница входа');
+  expect(stateOf(reporter).active.get(result) ? stateOf(reporter).active.get(result)!.step : null).toBe(
+    'Страница входа'
+  );
   reporter.onStepBegin(makeTest(), result, makeStep('test.step', 'Кабинет'));
-  expect(stateOf(reporter).active.get(result) ? stateOf(reporter).active.get(result)!.step : null).toBe('Кабинет');
+  expect(stateOf(reporter).active.get(result) ? stateOf(reporter).active.get(result)!.step : null).toBe(
+    'Кабинет'
+  );
 });
 
 test('onTestEnd: запись удаляется из active; итоговая строка по контракту', () => {
@@ -228,10 +253,10 @@ test('onTestEnd: запись удаляется из active; итоговая �
     reporter.onTestEnd(makeTest(), c);
   });
   expect(stateOf(reporter).active.size).toBe(0);
-  expect(out).toContain('✓ 1 srv-prod › кабинет олимпиад (1.2с)');
+  expect(out).toContain('✓ 1 srv-prod › веб-кабинет (1.2с)');
   expect(out).toContain('✘ 2 srv-prod › второй (2.5с)');
   expect(out).toContain('    неверный пароль');
-  expect(out).toContain('- 3 srv-prod › кабинет олимпиад'); // пропуск — без длительности
+  expect(out).toContain('- 3 srv-prod › веб-кабинет'); // пропуск — без длительности
   expect(out).not.toContain('\u001B');
   expect(out).not.toContain('\r');
 });
@@ -274,7 +299,7 @@ test('plain-профиль: счётчика времени в логе нет �
     reporter.onTestBegin(makeTest(), makeResult());
     reporter.onTestEnd(makeTest(), makeResult());
   });
-  expect(out).toContain('старт 1 srv-prod › кабинет олимпиад');
+  expect(out).toContain('старт 1 srv-prod › веб-кабинет');
   for (const line of out.split('\n')) {
     expect(/\d+\.\d$/.test(line)).toBe(false); // `SS.S` в конце строки — признак живой строки
   }
@@ -348,7 +373,7 @@ test('TTY: живые и итоговые строки с двухсимволь
     })
   );
   const text = stripAnsi(out).replace(/\r/g, '');
-  expect(text).toContain('  ✘ 1 srv-prod › кабинет олимпиад (2.5с)');
+  expect(text).toContain('  ✘ 1 srv-prod › веб-кабинет (2.5с)');
   expect(text).toContain('      неверный пароль'); // отступ строки + прежние 4 пробела вложенности
 });
 
@@ -364,8 +389,8 @@ test('plain-профиль: рамки блока нет — лог остаёт
     reporter.onEnd({ status: 'passed', duration: 1000 } as unknown as FullResult);
   });
   expect(out).not.toContain('\n\n');
-  expect(out).toMatch(/✓ 1 srv-prod › кабинет олимпиад \(1\.2с\)\n\d{2}:\d{2}:\d{2} ✓ 2 srv-prod/);
-  expect(out).toContain('✓ 2 srv-prod › кабинет олимпиад (1.2с)\nГотово за 1.0с');
+  expect(out).toMatch(/✓ 1 srv-prod › веб-кабинет \(1\.2с\)\n\d{2}:\d{2}:\d{2} ✓ 2 srv-prod/);
+  expect(out).toContain('✓ 2 srv-prod › веб-кабинет (1.2с)\nГотово за 1.0с');
 });
 
 test('TTY: постоянные строки обрезаются по ширине консоли — переноса нет', () => {
@@ -373,14 +398,18 @@ test('TTY: постоянные строки обрезаются по шири�
   const out = withConsoleSize(60, 40, () =>
     captureStdout(() => {
       const result = makeResult({ duration: 5700 });
-      reporter.onTestBegin(makeTest({ title: 'кабинет олимпиад школьников: вход и раздел второго тура' }), result);
-      reporter.onTestEnd(makeTest({ title: 'кабинет олимпиад школьников: вход и раздел второго тура' }), result);
+      reporter.onTestBegin(makeTest({ title: 'веб-кабинет: вход и раздел второго тура' }), result);
+      reporter.onTestEnd(makeTest({ title: 'веб-кабинет: вход и раздел второго тура' }), result);
       reporter.onEnd({ status: 'passed', duration: 0 } as unknown as FullResult);
     })
   );
   // Flush пишет `\r\u001B[2K{text}\n`: `\r` остаётся в начале сегмента после сплита.
-  for (const line of stripAnsi(out).split('\n').map(l => l.replace(/\r/g, ''))) {
-    if (line.includes('кабинет')) { expect(line.length).toBeLessThanOrEqual(59); }
+  for (const line of stripAnsi(out)
+    .split('\n')
+    .map(l => l.replace(/\r/g, ''))) {
+    if (line.includes('кабинет')) {
+      expect(line.length).toBeLessThanOrEqual(59);
+    }
   }
 });
 
@@ -479,12 +508,14 @@ test('TTY: счётчик атомарен по тесту — у каждой �
   const secondEntry = state.active.get(second);
   expect(firstEntry).toBeDefined();
   expect(secondEntry).toBeDefined();
-  if (!firstEntry || !secondEntry) { return; }
+  if (!firstEntry || !secondEntry) {
+    return;
+  }
   firstEntry.startedAt = Date.now() - 7300; // первому тесту — 7.3 с
   secondEntry.startedAt = Date.now() - 1200; // второму — 1.2 с
   const out = withConsoleSize(120, 40, () => captureStdout(() => state.redraw()));
   const text = stripAnsi(out);
-  expect(text).toMatch(/srv-prod › кабинет олимпиад 7\.3/);
+  expect(text).toMatch(/srv-prod › веб-кабинет 7\.3/);
   expect(text).toMatch(/второй 1\.2/);
 });
 
@@ -498,11 +529,13 @@ test('TTY: счётчик не зависит от наличия шага — �
       stateOf(reporter).redraw(); // onStepBegin кадр не перерисовывает — следующий такт таймера
     })
   );
-  expect(stripAnsi(out)).toMatch(/кабинет олимпиад › Страница входа \d+\.\d/);
+  expect(stripAnsi(out)).toMatch(/веб-кабинет › Страница входа \d+\.\d/);
   // отдельный прогон без единого шага: хвост строки — всё равно счётчик
   const bare = makeTtyReporter();
-  const bareOut = withConsoleSize(120, 40, () => captureStdout(() => bare.onTestBegin(makeTest(), makeResult())));
-  expect(stripAnsi(bareOut)).toMatch(/srv-prod › кабинет олимпиад \d+\.\d/);
+  const bareOut = withConsoleSize(120, 40, () =>
+    captureStdout(() => bare.onTestBegin(makeTest(), makeResult()))
+  );
+  expect(stripAnsi(bareOut)).toMatch(/srv-prod › веб-кабинет \d+\.\d/);
 });
 
 test('onBegin/onEnd: подписка resize ставится и снимается', () => {

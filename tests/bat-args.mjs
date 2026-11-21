@@ -57,11 +57,11 @@ function makeCaseDir(name) {
       '  dump,',
       '  JSON.stringify({',
       '    argv: process.argv.slice(2),',
-      "    monTarget: process.env.MONITOR_TARGET || null,",
+      '    monTarget: process.env.MONITOR_TARGET || null,',
       "    codepage: (cp.stdout || '').trim(),",
       '  })',
       ');',
-      '',
+      ''
     ].join('\n'),
     'utf-8'
   );
@@ -104,7 +104,7 @@ async function caseChcp() {
     cwd: dir,
     env: caseEnv(dir),
     encoding: 'utf8',
-    windowsVerbatimArguments: true,
+    windowsVerbatimArguments: true
   });
   check('код', problems, () => {
     if (r.status !== 0) {
@@ -131,7 +131,7 @@ async function casePassThrough() {
     cwd: dir,
     env: caseEnv(dir),
     encoding: 'utf8',
-    windowsVerbatimArguments: true,
+    windowsVerbatimArguments: true
   });
   check('код', problems, () => {
     if (r.status !== 0) {
@@ -162,7 +162,7 @@ async function caseExplorerPause() {
     cwd: dir,
     env,
     windowsVerbatimArguments: true,
-    stdio: ['pipe', 'pipe', 'pipe'],
+    stdio: ['pipe', 'pipe', 'pipe']
   });
   let explorerOut = '';
   explorer.stdout.on('data', c => {
@@ -224,7 +224,7 @@ async function caseExplorerPause() {
     cwd: dir,
     env,
     encoding: 'utf8',
-    windowsVerbatimArguments: true,
+    windowsVerbatimArguments: true
   });
   check('без паузы из консоли', problems, () => {
     if (consoleRun.status !== 0) {
@@ -240,7 +240,7 @@ async function caseExplorerPause() {
 const CASES = [
   ['chcp', caseChcp],
   ['pass-through', casePassThrough],
-  ['explorer-pause', caseExplorerPause],
+  ['explorer-pause', caseExplorerPause]
 ];
 
 let failed = false;

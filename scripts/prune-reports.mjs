@@ -83,7 +83,9 @@ async function main() {
     return 0;
   }
   if (days === null) {
-    const answer = await ask('За сколько последних дней оставить архивы отчётов? (число дней, пусто — отмена): ');
+    const answer = await ask(
+      'За сколько последних дней оставить архивы отчётов? (число дней, пусто — отмена): '
+    );
     if (answer.trim() === '') {
       console.log('[prune] отмена — ничего не удалено');
       return 0;
@@ -109,7 +111,9 @@ async function main() {
     .map(n => statRegularFile(path.join(ARTIFACTS_DIR, n)))
     .filter(f => f !== null);
   const isProtected = f => path.basename(f.p) === protectedName;
-  const old = all.filter(f => f.st.mtimeMs < border && !isProtected(f)).sort((a, b) => a.st.mtimeMs - b.st.mtimeMs);
+  const old = all
+    .filter(f => f.st.mtimeMs < border && !isProtected(f))
+    .sort((a, b) => a.st.mtimeMs - b.st.mtimeMs);
   if (all.some(isProtected)) {
     console.log(`[prune] защищён архив последнего прогона: ${protectedName}`);
   }
@@ -121,7 +125,9 @@ async function main() {
   }
 
   const total = old.reduce((sum, f) => sum + f.st.size, 0);
-  console.log(`[prune] будет удалено архивов старше ${days} дн.: ${old.length} из ${all.length}, ${mb(total)} МБ; останется: ${keepCount}`);
+  console.log(
+    `[prune] будет удалено архивов старше ${days} дн.: ${old.length} из ${all.length}, ${mb(total)} МБ; останется: ${keepCount}`
+  );
   for (const f of old) {
     console.log(`  ${path.basename(f.p)}  ${f.st.mtime.toLocaleString('ru-RU')}  ${mb(f.st.size)} МБ`);
   }

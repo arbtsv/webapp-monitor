@@ -31,7 +31,7 @@ const ESC = String.fromCharCode(27);
 const DURATIONS_MS: Record<string, [number, number, number]> = {
   srv10: [2500, 900, 800],
   srv2: [900, 800, 500],
-  srv1: [900, 800, 500],
+  srv1: [900, 800, 500]
 };
 
 /** 200–1200 мс — чтобы порядок завершения узлов менялся от прогона к прогону. */
@@ -42,7 +42,9 @@ function randomDelay(): Promise<void> {
   });
 }
 
-test('смоук: сквозной прогон через playwright.config.ts, хелперы и report.mjs', async ({ page }, testInfo) => {
+test('смоук: сквозной прогон через playwright.config.ts, хелперы и report.mjs', async ({
+  page
+}, testInfo) => {
   const { target, url } = testInfo.project.metadata as { target: string; url: string };
   const ctx = { environment: config.environment, target, url, runId: RUN_ID };
   const results: MetricResult[] = [];
@@ -77,7 +79,7 @@ test('смоук: сквозной прогон через playwright.config.ts,
 
     await test.step('в) раздел тура', async () => {
       await randomDelay();
-      results.push(recordMetric(ctx, 'olymp_tree_ms', d3, config.thresholds.olymp_tree_ms));
+      results.push(recordMetric(ctx, 'section_ms', d3, config.thresholds.section_ms));
     });
 
     failed = false;
@@ -86,8 +88,12 @@ test('смоук: сквозной прогон через playwright.config.ts,
   }
 
   await testInfo.attach('timings', {
-    body: JSON.stringify({ run_id: RUN_ID, environment: config.environment, target, url, metrics: results }, null, 2),
-    contentType: 'application/json',
+    body: JSON.stringify(
+      { run_id: RUN_ID, environment: config.environment, target, url, metrics: results },
+      null,
+      2
+    ),
+    contentType: 'application/json'
   });
 
   const slow = results.filter(r => r.failure);
@@ -95,7 +101,12 @@ test('смоук: сквозной прогон через playwright.config.ts,
 });
 
 /** Зеркалит captureScreenshot настоящей спеки — снимок в любом исходе. */
-async function captureScreenshot(page: Page, testInfo: TestInfo, target: string, failed: boolean): Promise<void> {
+async function captureScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  target: string,
+  failed: boolean
+): Promise<void> {
   const file = screenshotPath(RUN_ID, target, failed ? 'fail' : 'pass', testInfo);
   try {
     await page.setContent('<html><body>смоук webapp-monitor</body></html>');

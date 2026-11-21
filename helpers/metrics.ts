@@ -58,10 +58,18 @@ export function recordMetric(
     String(ratio),
     String(threshold.maxRatio),
     verdict,
-    ctx.runId,
+    ctx.runId
   ]);
 
-  return { metric, durationMs, referenceMs: threshold.reference, maxRatio: threshold.maxRatio, ratio, verdict, failure };
+  return {
+    metric,
+    durationMs,
+    referenceMs: threshold.reference,
+    maxRatio: threshold.maxRatio,
+    ratio,
+    verdict,
+    failure
+  };
 }
 
 /**

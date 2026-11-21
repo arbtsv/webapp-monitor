@@ -11,7 +11,7 @@ const targets = resolveTargets(config);
 const projects: Project[] = targets.map(t => ({
   name: t.name,
   metadata: { target: t.name, url: t.url },
-  use: { baseURL: t.url },
+  use: { baseURL: t.url }
 }));
 
 /**
@@ -20,6 +20,7 @@ const projects: Project[] = targets.map(t => ({
  */
 const monitorWorkers = resolveMonitorWorkers(process.env.MONITOR_WORKERS, os.cpus().length);
 if (monitorWorkers.warning && process.env.TEST_WORKER_INDEX === undefined) {
+  // eslint-disable-next-line no-console
   console.warn(monitorWorkers.warning);
 }
 const workers = monitorWorkers.workers;
@@ -48,7 +49,7 @@ export default defineConfig({
     headless: true,
     launchOptions: {
       // Мимо системного прокси Windows: он шумит в замерах, цель — прямой доступ.
-      args: ['--no-proxy-server'],
+      args: ['--no-proxy-server']
     },
     // Цель прокручивает внутренний контейнер, а не окно: fullPage-снимок не больше
     // вьюпорта. Высокое окно держит содержимое раздела в кадре.
@@ -57,7 +58,7 @@ export default defineConfig({
     video: 'off',
     trace: 'off',
     actionTimeout: TIMEOUTS.actionMs,
-    navigationTimeout: TIMEOUTS.navigationMs,
+    navigationTimeout: TIMEOUTS.navigationMs
   },
   // Консольный вывод — `reporters/live`; html, json и runs.csv — только вне `--list`: в
   // `--list` они перезаписали бы отчёты прошлого прогона пустыми.
@@ -67,9 +68,9 @@ export default defineConfig({
         [require.resolve('./reporters/live')],
         [require.resolve('./reporters/run-record')],
         ['html', { open: 'never', outputFolder: htmlOutputFolder }],
-        ['json', { outputFile: jsonOutputFile }],
+        ['json', { outputFile: jsonOutputFile }]
       ],
   outputDir: path.join(ARTIFACTS_DIR, 'test-output'),
   metadata: { recheck_of: RECHECK_OF },
-  projects,
+  projects
 });

@@ -14,7 +14,9 @@ interface ConsoleModeApi {
 }
 
 async function loadApi(): Promise<ConsoleModeApi> {
-  const mod = await import(pathToFileURL(path.join(path.resolve(__dirname, '..'), 'scripts', 'console-mode.mjs')).href);
+  const mod = await import(
+    pathToFileURL(path.join(path.resolve(__dirname, '..'), 'scripts', 'console-mode.mjs')).href
+  );
   return mod as ConsoleModeApi;
 }
 

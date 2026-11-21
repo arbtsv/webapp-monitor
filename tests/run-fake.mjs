@@ -21,13 +21,7 @@
  * 2 — сбой самой обёртки (дочерний процесс не запустился). Вывод режимов идёт на консоль как есть.
  */
 import * as path from 'path';
-import {
-  BUNDLE_ROOT,
-  FAIL_VERDICT,
-  HARNESS_FAILURE,
-  envWithoutMonitor,
-  runStep,
-} from './run-lib.mjs';
+import { BUNDLE_ROOT, FAIL_VERDICT, HARNESS_FAILURE, envWithoutMonitor, runStep } from './run-lib.mjs';
 
 const PREFIX = '[run-fake]';
 
@@ -46,7 +40,7 @@ const STALLED_NOT_RECHECKED = [
   /stalled\s+всё ещё медленно/,
   /stalled\s+сбой/,
   /stalled\s+исход неизвестен/,
-  /Перепроверка узлов с превышением порога: [^\r\n]*stalled/,
+  /Перепроверка узлов с превышением порога: [^\r\n]*stalled/
 ];
 
 const FAKE = path.join(BUNDLE_ROOT, 'tests', 'fake-cabinet.mjs');
@@ -63,7 +57,7 @@ async function main() {
     {
       code: 1,
       markers: [FAIL_VERDICT, RECHECK_SECTION, RECHECK_LOG, RECHECK_OK, RECHECK_STILL_SLOW, RECHECK_FAIL],
-      absent: STALLED_NOT_RECHECKED,
+      absent: STALLED_NOT_RECHECKED
     }
   );
   if (bat !== 0) {

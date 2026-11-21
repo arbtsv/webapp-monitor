@@ -21,7 +21,7 @@ const METRICS_HEADER =
   'timestamp,environment,target,url,metric,duration_ms,reference_ms,ratio,max_ratio,verdict,run_id';
 const RUNS_HEADER =
   'run_id,started_at,config_file,environment,host,cpu_count,workers,targets,scenario,recheck_of,timeouts,node_version,playwright_version,bundle_version';
-const METRIC_IDS = ['signin_page_ms', 'login_ms', 'olymp_tree_ms'];
+const METRIC_IDS = ['signin_page_ms', 'login_ms', 'section_ms'];
 
 const RUN = '20260929-120000';
 const RECHECK = `${RUN}-recheck`;
@@ -47,7 +47,7 @@ function metricLine(ts: string, target: string, metric: string, duration: number
     ratio: '1',
     max_ratio: '2',
     verdict: 'ok',
-    run_id: runId,
+    run_id: runId
   });
 }
 
@@ -65,7 +65,7 @@ function runsLine(runId: string, startedAt: string): string {
     timeouts: 'default:30000/180000/30000/60000',
     node_version: 'v20.0.0',
     playwright_version: '1.61.0',
-    bundle_version: '4.0.0',
+    bundle_version: '4.0.0'
   });
 }
 
@@ -100,15 +100,19 @@ function buildFixture(name: string, { withRunsRow }: { withRunsRow: boolean }): 
     [3, 'srv1', 'signin_page_ms', 1100],
     [9, 'srv2', 'login_ms', 1300],
     [8, 'srv1', 'login_ms', 1400],
-    [12, 'srv2', 'olymp_tree_ms', 1500],
-    [11, 'srv1', 'olymp_tree_ms', 1600],
+    [12, 'srv2', 'section_ms', 1500],
+    [11, 'srv1', 'section_ms', 1600]
   ];
   for (const [sec, target, metric, ms] of runRows) {
     metricsLines.push(metricLine(tsAt(sec), target, metric, ms, RUN));
   }
   metricsLines.push(metricLine(tsAt(600), 'srv1', 'login_ms', 999, RECHECK));
 
-  fs.writeFileSync(path.join(dir, 'metrics.csv'), [METRICS_HEADER, ...metricsLines].join('\n') + '\n', 'utf-8');
+  fs.writeFileSync(
+    path.join(dir, 'metrics.csv'),
+    [METRICS_HEADER, ...metricsLines].join('\n') + '\n',
+    'utf-8'
+  );
   const runsLines = [runsLine(OLD_RUN, '2026-01-01T09:00:00.000Z')];
   if (withRunsRow) {
     runsLines.push(runsLine(RUN, START));
@@ -142,7 +146,7 @@ test('report: metrics.csv читается с точки входа по started
   expect(text).toContain('Узел srv1');
   expect(text).toContain('Узел srv2');
   expect(text).toContain('1.10 с'); // srv1 signin_page_ms
-  expect(text).toContain('1.50 с'); // srv2 olymp_tree_ms
+  expect(text).toContain('1.50 с'); // srv2 section_ms
   // Строка прогона RUN с меткой до его старта в файле есть, но до точки входа не дочитывается.
   expect(text).not.toContain('Узел ghost');
   // Перепроверка прогона найдена в хвосте.
@@ -166,7 +170,11 @@ test('report: нет строки прогона в runs.csv — metrics.csv ч�
 test('report: started_at не в формате toISOString — metrics.csv читается целиком', () => {
   const { dir } = buildFixture('bad-started-at', { withRunsRow: true });
   const runsPath = path.join(dir, 'runs.csv');
-  fs.writeFileSync(runsPath, fs.readFileSync(runsPath, 'utf-8').replace(START, '29.09.2026 12:00:00'), 'utf-8');
+  fs.writeFileSync(
+    runsPath,
+    fs.readFileSync(runsPath, 'utf-8').replace(START, '29.09.2026 12:00:00'),
+    'utf-8'
+  );
   const { res, text } = runReport(dir);
 
   expect(res.error, res.stderr).toBeUndefined();
@@ -183,7 +191,7 @@ test('report: подписи метрик — из вложения timings сц
     csvPath,
     [
       metricLine(tsAt(20), 'srv1', 'signin_page_ms', 900, RUN),
-      metricLine(tsAt(21), 'srv1', 'custom_metric', 900, RUN),
+      metricLine(tsAt(21), 'srv1', 'custom_metric', 900, RUN)
     ].join('\n') + '\n',
     'utf-8'
   );
@@ -191,7 +199,7 @@ test('report: подписи метрик — из вложения timings сц
     JSON.stringify({
       labels: { signin_page_ms: 'Страница входа', custom_metric: 'Моя метрика' },
       title: 'Мониторинг тестового кабинета',
-      legend: ['Моя метрика — расшифровка шага.'],
+      legend: ['Моя метрика — расшифровка шага.']
     }),
     'utf-8'
   ).toString('base64');
@@ -202,11 +210,21 @@ test('report: подписи метрик — из вложения timings сц
         specs: [
           {
             title: 'сценарий',
-            tests: [{ projectName: 'srv1', results: [{ status: 'passed', attachments: [{ name: 'timings', body: timings, contentType: 'application/json' }] }] }],
-          },
-        ],
-      },
-    ],
+            tests: [
+              {
+                projectName: 'srv1',
+                results: [
+                  {
+                    status: 'passed',
+                    attachments: [{ name: 'timings', body: timings, contentType: 'application/json' }]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
   };
   fs.writeFileSync(path.join(dir, 'last-run.json'), JSON.stringify(json), 'utf-8');
   const { res, text } = runReport(dir);
@@ -221,7 +239,11 @@ test('report: подписи метрик — из вложения timings сц
 
   // Без вложения timings подписей нет — сырое имя метрики, нейтральный заголовок, без легенды.
   const { dir: dir2 } = buildFixture('metric-labels-fallback', { withRunsRow: true });
-  fs.appendFileSync(path.join(dir2, 'metrics.csv'), metricLine(tsAt(20), 'srv1', 'custom_metric', 900, RUN) + '\n', 'utf-8');
+  fs.appendFileSync(
+    path.join(dir2, 'metrics.csv'),
+    metricLine(tsAt(20), 'srv1', 'custom_metric', 900, RUN) + '\n',
+    'utf-8'
+  );
   fs.writeFileSync(
     path.join(dir2, 'last-run.json'),
     JSON.stringify({ config: { metadata: { run_id: RUN }, projects: [{ name: 'srv1' }] }, suites: [] }),
@@ -279,11 +301,15 @@ test('report: metrics.csv удалён между замерами — шапк�
     [
       metricLine(tsAt(2), 'srv1', 'signin_page_ms', 600, RUN),
       metricLine(tsAt(3), 'srv1', 'login_ms', 700, RUN),
-      metricLine(tsAt(4), 'srv1', 'olymp_tree_ms', 800, RUN),
+      metricLine(tsAt(4), 'srv1', 'section_ms', 800, RUN)
     ].join('\n') + '\n',
     'utf-8'
   );
-  fs.writeFileSync(path.join(dir, 'runs.csv'), [RUNS_HEADER, runsLine(RUN, START)].join('\n') + '\n', 'utf-8');
+  fs.writeFileSync(
+    path.join(dir, 'runs.csv'),
+    [RUNS_HEADER, runsLine(RUN, START)].join('\n') + '\n',
+    'utf-8'
+  );
   fs.writeFileSync(path.join(dir, 'last-run-id.txt'), RUN + '\n', 'utf-8');
 
   const { res, text } = runReport(dir);
@@ -315,9 +341,9 @@ const VALID_BASE = {
   environment: 'test',
   login: 'login',
   password: 'password',
-  scenario: 'olymp-first-round',
+  scenario: 'cabinet-first-round',
   targets: { srv1: 'http://srv1.invalid/school.html' },
-  thresholds: { signin_page_ms: { reference: 1000, maxRatio: 2 } },
+  thresholds: { signin_page_ms: { reference: 1000, maxRatio: 2 } }
 };
 
 test('config: ключ scenario обязателен — без него ошибка с именем поля', async () => {
@@ -332,11 +358,14 @@ test('config: сценарий задан — конфиг загружаетс�
   const configPath = writeConfig('config-with-scenario', VALID_BASE);
   const { loadMonitorConfig } = await importMonitor();
   const cfg = loadMonitorConfig(configPath) as { scenario: string };
-  expect(cfg.scenario).toBe('olymp-first-round');
+  expect(cfg.scenario).toBe('cabinet-first-round');
 });
 
 test('config: файл сценария не найден — ошибка до прогона, с именем файла', async () => {
-  const configPath = writeConfig('config-missing-scenario-file', { ...VALID_BASE, scenario: 'no-such-scenario' });
+  const configPath = writeConfig('config-missing-scenario-file', {
+    ...VALID_BASE,
+    scenario: 'no-such-scenario'
+  });
   const { loadMonitorConfig } = await importMonitor();
   expect(() => loadMonitorConfig(configPath)).toThrow(/specs\/no-such-scenario\.spec\.ts/);
 });
@@ -355,7 +384,7 @@ test('config: порог метрики сценария не задан — о�
     const cabinet = await import('../specs/cabinet');
     const cfg = { ...VALID_BASE } as Parameters<typeof cabinet.thresholdsFor>[0];
     // В фикстине только signin_page_ms: первая же отсутствующая метрика — login_ms.
-    expect(() => cabinet.thresholdsFor(cfg, ['signin_page_ms', 'login_ms', 'olymp_tree_ms'])).toThrow(
+    expect(() => cabinet.thresholdsFor(cfg, ['signin_page_ms', 'login_ms', 'section_ms'])).toThrow(
       /thresholds\.login_ms/
     );
     const full = {
@@ -363,11 +392,11 @@ test('config: порог метрики сценария не задан — о�
       thresholds: {
         signin_page_ms: { reference: 1000, maxRatio: 2 },
         login_ms: { reference: 1000, maxRatio: 10 },
-        olymp_tree_ms: { reference: 1000, maxRatio: 5 },
-      },
+        section_ms: { reference: 1000, maxRatio: 5 }
+      }
     } as Parameters<typeof cabinet.thresholdsFor>[0];
     const thresholds = cabinet.thresholdsFor(full);
-    expect(thresholds.olymp_tree_ms.reference).toBe(1000);
+    expect(thresholds.section_ms.reference).toBe(1000);
   } finally {
     Object.assign(process.env, saved);
   }
@@ -401,10 +430,16 @@ function writeReportDir(root: string, data: Record<string, Buffer>): void {
 }
 
 /** Фикстура прогона с HTML-отчётом и снимками; возвращает исходные байты снимков. */
-function buildArchiveFixture(name: string, opts: ArchiveOptions): { dir: string; originals: Map<string, Buffer> } {
+function buildArchiveFixture(
+  name: string,
+  opts: ArchiveOptions
+): { dir: string; originals: Map<string, Buffer> } {
   const { dir } = buildFixture(name, { withRunsRow: true });
   if (opts.acceptedRunJson) {
-    const json = { config: { metadata: { run_id: RUN }, projects: [{ name: 'srv1' }, { name: 'srv2' }] }, suites: [] };
+    const json = {
+      config: { metadata: { run_id: RUN }, projects: [{ name: 'srv1' }, { name: 'srv2' }] },
+      suites: []
+    };
     fs.writeFileSync(path.join(dir, 'last-run.json'), JSON.stringify(json), 'utf-8');
   }
   if (opts.acceptedRecheckJson) {
@@ -434,7 +469,9 @@ function unzipArchive(dir: string): string {
   const script =
     'Add-Type -AssemblyName System.IO.Compression.FileSystem; ' +
     `[System.IO.Compression.ZipFile]::ExtractToDirectory(${psQuote(zip)}, ${psQuote(dest)})`;
-  const res = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf-8' });
+  const res = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], {
+    encoding: 'utf-8'
+  });
   expect(res.status, res.stderr).toBe(0);
   return dest;
 }
@@ -451,7 +488,9 @@ function expectShotsPacked(dir: string, unzipped: string, originals: Map<string,
   for (const [name, bytes] of originals) {
     const packed = path.join(unzipped, 'screenshots', name);
     expect(fs.existsSync(packed), `снимок ${name} не упакован под screenshots/`).toBe(true);
-    expect(fs.readFileSync(packed).equals(bytes), `снимок ${name} в архиве отличается от оригинала`).toBe(true);
+    expect(fs.readFileSync(packed).equals(bytes), `снимок ${name} в архиве отличается от оригинала`).toBe(
+      true
+    );
   }
   const left = fs.readdirSync(path.join(dir, 'screenshots')).filter(n => n.startsWith(`${RUN}-`));
   expect(left, 'снимки прогона остались на диске').toEqual([]);
@@ -466,7 +505,7 @@ test.describe('report: снимки в архиве прогона', () => {
     const { dir, originals } = buildArchiveFixture('shots-packed', {
       acceptedRunJson: true,
       reportData: { 'entry1.png': x },
-      shots: { [shot1]: x, [shot2]: y },
+      shots: { [shot1]: x, [shot2]: y }
     });
     // Остаток чужого прогона: его архив не пересобирался, снимок остался в общем каталоге.
     // Упаковка каталогом целиком утянула бы его в этот архив — списком не должен.
@@ -493,7 +532,7 @@ test.describe('report: снимки в архиве прогона', () => {
     const { dir, originals } = buildArchiveFixture('shots-report-not-packed', {
       acceptedRunJson: false,
       reportData: { 'entry1.png': x },
-      shots: { [shot1]: x },
+      shots: { [shot1]: x }
     });
     const res = runReport(dir).res;
 
@@ -514,7 +553,7 @@ test.describe('report: снимки в архиве прогона', () => {
       acceptedRunJson: true,
       acceptedRecheckJson: true,
       recheckData: { 'entry2.png': z },
-      shots: { [shot]: z },
+      shots: { [shot]: z }
     });
     const res = runReport(dir).res;
 
@@ -532,7 +571,7 @@ test.describe('report: снимки в архиве прогона', () => {
       acceptedRunJson: true,
       acceptedRecheckJson: false,
       recheckData: { 'entry2.png': z },
-      shots: { [shot]: z },
+      shots: { [shot]: z }
     });
     const res = runReport(dir).res;
 
@@ -546,7 +585,7 @@ test.describe('report: снимки в архиве прогона', () => {
   test('снимков нет — каталога screenshots/ в архиве нет', () => {
     const { dir } = buildArchiveFixture('shots-none', {
       acceptedRunJson: true,
-      shots: {},
+      shots: {}
     });
     const res = runReport(dir).res;
 

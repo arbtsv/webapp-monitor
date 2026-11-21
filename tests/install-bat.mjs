@@ -70,12 +70,12 @@ function makeCaseDir(name, { realOrchestrator = false } = {}) {
         '  dump,',
         '  JSON.stringify({',
         '    argv: process.argv.slice(2),',
-        '    codepage: (cp.stdout || cp.stderr || \'\').trim(),',
+        "    codepage: (cp.stdout || cp.stderr || '').trim(),",
         '    stdinIsTty: Boolean(process.stdin.isTTY),',
         '  })',
         ');',
         'process.exit(Number(process.env.STUB_EXIT_CODE || 0));',
-        '',
+        ''
       ].join('\n'),
       'utf-8'
     );
@@ -123,7 +123,7 @@ function runBat(dir, batName, args, options = {}) {
     encoding: 'utf8',
     windowsVerbatimArguments: true,
     timeout: 60000,
-    ...rest,
+    ...rest
   });
 }
 
@@ -181,7 +181,7 @@ async function caseExitCodes() {
     });
     const rp = runBat(dir, 'install.bat', [], {
       input: '',
-      env: { STUB_EXIT_CODE: String(code) },
+      env: { STUB_EXIT_CODE: String(code) }
     });
     check(`код ${code} (pipe)`, problems, () => {
       if (rp.status !== code) {
@@ -196,7 +196,7 @@ async function caseExitCodes() {
     cwd: dir,
     env,
     windowsVerbatimArguments: true,
-    stdio: ['pipe', 'pipe', 'pipe'],
+    stdio: ['pipe', 'pipe', 'pipe']
   });
   const rc = await new Promise(resolve => {
     const wait = setInterval(() => {
@@ -259,7 +259,7 @@ async function caseExplorerPause() {
     cwd: dir,
     env,
     windowsVerbatimArguments: true,
-    stdio: ['pipe', 'pipe', 'pipe'],
+    stdio: ['pipe', 'pipe', 'pipe']
   });
   let explorerOut = '';
   explorer.stdout.on('data', c => {
@@ -327,7 +327,7 @@ function caseBootstrapFail() {
   fs.rmSync(path.join(dir, 'node'), { recursive: true, force: true });
   // Нет node\, зеркало недоступно: curl падает быстро, без сети.
   const r = runBat(dir, 'install.bat', ['/y'], {
-    env: { MONITOR_NODE_MIRROR: 'http://127.0.0.1:9/' },
+    env: { MONITOR_NODE_MIRROR: 'http://127.0.0.1:9/' }
   });
   check('код 1', problems, () => {
     if (r.status !== 1) {
@@ -352,7 +352,7 @@ async function main() {
     ['no-console', caseNoConsole()],
     ['explorer-pause', await caseExplorerPause()],
     ['exit-codes', await caseExitCodes()],
-    ['bootstrap-fail', caseBootstrapFail()],
+    ['bootstrap-fail', caseBootstrapFail()]
   ];
   let failed = 0;
   for (const [name, problems] of cases) {

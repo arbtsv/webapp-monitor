@@ -75,10 +75,16 @@ export function loadMonitorConfig(configPath) {
   };
 
   field(typeof cfg === 'object' && cfg !== null && !Array.isArray(cfg), 'ожидался объект наверху уровня');
-  field(typeof cfg.environment === 'string' && cfg.environment.trim() !== '', 'не задан environment — имя контура, под которым пишется статистика');
+  field(
+    typeof cfg.environment === 'string' && cfg.environment.trim() !== '',
+    'не задан environment — имя контура, под которым пишется статистика'
+  );
   field(typeof cfg.login === 'string' && cfg.login !== '', 'не заполнен login');
   field(typeof cfg.password === 'string' && cfg.password !== '', 'не заполнен password');
-  field(typeof cfg.scenario === 'string' && cfg.scenario.trim() !== '', 'не задан scenario — имя файла сценария без расширения (specs/<scenario>.spec.ts)');
+  field(
+    typeof cfg.scenario === 'string' && cfg.scenario.trim() !== '',
+    'не задан scenario — имя файла сценария без расширения (specs/<scenario>.spec.ts)'
+  );
   if (typeof cfg.scenario === 'string' && cfg.scenario.trim() !== '') {
     // Имя становится частью пути: безопасный набор и существование файла — до прогона.
     field(
@@ -89,28 +95,49 @@ export function loadMonitorConfig(configPath) {
     field(fs.existsSync(scenarioFile), `файл сценария specs/${cfg.scenario}.spec.ts не найден`);
   }
 
-  field(cfg.targets !== null && typeof cfg.targets === 'object' && !Array.isArray(cfg.targets), 'не заданы targets — узлы контура (имя → URL точки входа)');
+  field(
+    cfg.targets !== null && typeof cfg.targets === 'object' && !Array.isArray(cfg.targets),
+    'не заданы targets — узлы контура (имя → URL точки входа)'
+  );
   if (cfg.targets) {
     const names = Object.keys(cfg.targets);
     field(names.length > 0, 'не задан ни один узел в targets');
     for (const name of names) {
       field(name.trim() !== '', 'в targets есть узел с пустым именем');
-      field(typeof cfg.targets[name] === 'string' && cfg.targets[name].trim() !== '', `targets.${name} должен быть непустым URL точки входа`);
+      field(
+        typeof cfg.targets[name] === 'string' && cfg.targets[name].trim() !== '',
+        `targets.${name} должен быть непустым URL точки входа`
+      );
     }
   }
 
-  field(cfg.thresholds !== null && typeof cfg.thresholds === 'object' && !Array.isArray(cfg.thresholds), 'не заданы thresholds — эталоны по именам метрик сценария');
+  field(
+    cfg.thresholds !== null && typeof cfg.thresholds === 'object' && !Array.isArray(cfg.thresholds),
+    'не заданы thresholds — эталоны по именам метрик сценария'
+  );
   if (cfg.thresholds) {
     // Полноту по именам метрик знает только сценарий (сверяет specs/cabinet.ts при загрузке);
     // ядро проверяет саму таблицу: непустая, каждый порог — положительный { reference, maxRatio }.
     const metricNames = Object.keys(cfg.thresholds);
-    field(metricNames.length > 0, 'thresholds пуст — для каждой метрики сценария нужен порог { reference, maxRatio }');
+    field(
+      metricNames.length > 0,
+      'thresholds пуст — для каждой метрики сценария нужен порог { reference, maxRatio }'
+    );
     for (const metric of metricNames) {
       const t = cfg.thresholds[metric];
-      field(t !== null && typeof t === 'object', `thresholds.${metric} должен быть объектом { reference, maxRatio }`);
+      field(
+        t !== null && typeof t === 'object',
+        `thresholds.${metric} должен быть объектом { reference, maxRatio }`
+      );
       if (t && typeof t === 'object') {
-        field(typeof t.reference === 'number' && Number.isFinite(t.reference) && t.reference > 0, `thresholds.${metric}.reference должно быть положительным числом, получено ${JSON.stringify(t.reference)}`);
-        field(typeof t.maxRatio === 'number' && Number.isFinite(t.maxRatio) && t.maxRatio > 0, `thresholds.${metric}.maxRatio должно быть положительным числом, получено ${JSON.stringify(t.maxRatio)}`);
+        field(
+          typeof t.reference === 'number' && Number.isFinite(t.reference) && t.reference > 0,
+          `thresholds.${metric}.reference должно быть положительным числом, получено ${JSON.stringify(t.reference)}`
+        );
+        field(
+          typeof t.maxRatio === 'number' && Number.isFinite(t.maxRatio) && t.maxRatio > 0,
+          `thresholds.${metric}.maxRatio должно быть положительным числом, получено ${JSON.stringify(t.maxRatio)}`
+        );
       }
     }
   }
@@ -144,7 +171,7 @@ function runPlaywright(extraArgs = []) {
     const child = spawn(process.execPath, [cliJs, 'test', ...extraArgs], {
       cwd: BUNDLE_ROOT,
       env: process.env,
-      stdio: ['ignore', 'inherit', 'inherit'],
+      stdio: ['ignore', 'inherit', 'inherit']
     });
     child.on('error', e => {
       console.error(`[monitor] не удалось запустить Playwright: ${e.message}`);
@@ -176,7 +203,9 @@ async function main() {
   const { configPath, pairs, bad } = parseArgs(process.argv.slice(2));
 
   for (const token of bad) {
-    console.error(`[monitor] "${token}" не в форме ИМЯ=ЗНАЧЕНИЕ — передайте значение аргументом в кавычках целиком.`);
+    console.error(
+      `[monitor] "${token}" не в форме ИМЯ=ЗНАЧЕНИЕ — передайте значение аргументом в кавычках целиком.`
+    );
   }
   if (bad.length > 0) {
     process.exitCode = 1;
@@ -270,7 +299,7 @@ async function main() {
 
   // Отчёт — после прогона и перепроверки, в любом их исходе. Импорт здесь,
   // после применения пар: common.mjs внутри report.mjs вычисляет пути при загрузке модуля.
-  let reportCode = 0;
+  let reportCode;
   try {
     const { buildReport } = await import('./report.mjs');
     reportCode = buildReport();

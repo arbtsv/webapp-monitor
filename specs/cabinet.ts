@@ -1,5 +1,5 @@
 /**
- * Библиотека сценария кабинета олимпиад школьников: шаги входа/тура, общий прогон
+ * Библиотека сценария веб-кабинета: шаги входа/раздела, общий прогон
  * сценария и сверка порогов. Живёт в specs/ — это предметная область сценариев;
  * ядро (helpers/, scripts/) её не импортирует.
  */
@@ -100,9 +100,9 @@ export async function login(page: Page, credentials: Credentials): Promise<numbe
 }
 
 /**
- * Шаг «в»: перейти в раздел тура; замер — от смены якоря до дерева олимпиад или, в день X,
+ * Шаг «в»: перейти в раздел; замер — от смены якоря до дерева раздела или, в день X,
  * таблицы дня X (с `dayXOnly` — только таблицы). Видимое дерево значит, что раздел
- * загрузился, а не показал заглушку тура. Метрика `olymp_tree_ms` общая для туров и дня X —
+ * загрузился, а не показал заглушку. Метрика `section_ms` общая для туров и дня X —
  * под этим именем пороги в `env*.json`.
  */
 export async function openRound(page: Page, opts?: RoundOpts): Promise<number> {
@@ -113,21 +113,16 @@ export async function openRound(page: Page, opts?: RoundOpts): Promise<number> {
 
   // `.first()`: без него strict mode падает, когда видимы оба варианта — дерево и таблица
   // дня X (переходный момент в день X; фиктивный кабинет рисует оба всегда).
-  await sectionReady(page, opts)
-    .first()
-    .waitFor({ state: 'visible', timeout: TIMEOUTS.stepMs });
+  await sectionReady(page, opts).first().waitFor({ state: 'visible', timeout: TIMEOUTS.stepMs });
   return Date.now() - started;
 }
 
 /**
- * Шаг «г»: список состязаний тура (`olymp-exam-list` или `olymp-dayx-table`) виден и непуст;
+ * Шаг «г»: таблица раздела (`olymp-exam-list` или `olymp-dayx-table`) видна и непуста;
  * строки в обоих — `olymp-exam-item`. Проверка положительная: отсутствие заглушки
- * «нет профилей» ничего не доказывает.
+ * «нет записей» ничего не доказывает.
  */
-export async function readExamTable(
-  page: Page,
-  opts?: RoundOpts
-): Promise<{ list: Locator; count: number }> {
+export async function readExamTable(page: Page, opts?: RoundOpts): Promise<{ list: Locator; count: number }> {
   // `.first()`: без него strict mode падает, когда видимы обе таблицы — дня X и «Состязания».
   const list = examList(page, opts).first();
   await list.waitFor({ state: 'visible', timeout: TIMEOUTS.stepMs });
@@ -162,7 +157,7 @@ function sectionReady(page: Page, opts?: RoundOpts): Locator {
   return dayXTable(page, opts).or(roundTree(page, opts)).filter({ visible: true });
 }
 
-/** Список состязаний: таблица «Состязания» или таблица дня X; с `dayXOnly` — только она. */
+/** Список записей раздела: таблица «Состязания» или таблица дня X; с `dayXOnly` — только она. */
 function examList(page: Page, opts?: RoundOpts): Locator {
   if (opts?.dayXOnly) {
     return dayXTable(page, opts);
@@ -188,31 +183,31 @@ function loginField(page: Page): Locator {
 // --- Общий прогон сценария --------------------------------------------------
 
 /** Имена метрик поставляемых сценариев кабинета. */
-export const SCENARIO_METRICS = ['signin_page_ms', 'login_ms', 'olymp_tree_ms'] as const;
+export const SCENARIO_METRICS = ['signin_page_ms', 'login_ms', 'section_ms'] as const;
 
 /**
  * Человеческие подписи метрик — часть сценария, не ядра:
  * отчёт читает их из вложения `timings` (поле `labels`) и показывает вместо сырых имён.
  */
-export const OLYMP_METRIC_LABELS: Record<string, string> = {
+export const SCENARIO_METRIC_LABELS: Record<string, string> = {
   signin_page_ms: 'Страница входа',
   login_ms: 'Вход в кабинет',
-  olymp_tree_ms: 'Раздел кабинета',
+  section_ms: 'Раздел кабинета'
 };
 
 /** Заголовок отчёта — текст сценария; у ядра без него нейтральный fallback. */
-export const OLYMP_REPORT_TITLE = 'Мониторинг ЛК олимпиад школьников';
+export const SCENARIO_REPORT_TITLE = 'Мониторинг веб-кабинета';
 
 /** Легенда метрик в конце отчёта — расшифровка шагов сценария. */
-export const OLYMP_REPORT_LEGEND = [
+export const SCENARIO_REPORT_LEGEND = [
   'Страница входа — от открытия страницы до появления поля логина.',
   'Вход в кабинет — от нажатия входа до появления кабинета.',
-  'Раздел кабинета — от перехода в раздел тура до готового раздела.',
+  'Раздел кабинета — от перехода в раздел тура до готового раздела.'
 ];
 
 /** Опции прогона сценария: раздел тура (тур/день X) или только вход. */
 export interface CabinetScenarioOptions {
-  /** Шаги «Раздел кабинета» и «Список состязаний» с этими опциями тура; без них — только вход. */
+  /** Шаги «Раздел кабинета» и «Таблица раздела» с этими опциями раздела; без них — только вход. */
   round?: RoundOpts;
 }
 
@@ -221,7 +216,10 @@ export interface CabinetScenarioOptions {
  * с именем метрики. Спеки вызывают при загрузке модуля, так что промах с конфигом падает
  * до первого входа на страницу.
  */
-export function thresholdsFor(cfg: MonitorConfig, names: readonly string[] = SCENARIO_METRICS): Record<string, Threshold> {
+export function thresholdsFor(
+  cfg: MonitorConfig,
+  names: readonly string[] = SCENARIO_METRICS
+): Record<string, Threshold> {
   const out: Record<string, Threshold> = {};
   for (const name of names) {
     const t = cfg.thresholds[name];
@@ -237,11 +235,15 @@ export function thresholdsFor(cfg: MonitorConfig, names: readonly string[] = SCE
 }
 
 /**
- * Тело сценария кабинета: шаги входа, опционально раздел тура, снимок в любом исходе и
- * вложение `timings` (его читает scripts/report.mjs). Тонкие spec-файлы олимпийских
- * сценариев — вызовы этой функции со своими опциями тура.
+ * Тело сценария кабинета: шаги входа, опционально раздел, снимок в любом исходе и
+ * вложение `timings` (его читает scripts/report.mjs). Тонкие spec-файлы
+ * поставляемых сценариев — вызовы этой функции со своими опциями раздела.
  */
-export async function runCabinetScenario(page: Page, testInfo: TestInfo, options: CabinetScenarioOptions): Promise<void> {
+export async function runCabinetScenario(
+  page: Page,
+  testInfo: TestInfo,
+  options: CabinetScenarioOptions
+): Promise<void> {
   const config = loadConfig();
   const runIdValue = runId();
   const thresholds = thresholdsFor(config, options.round ? SCENARIO_METRICS : SCENARIO_METRICS.slice(0, 2));
@@ -249,7 +251,7 @@ export async function runCabinetScenario(page: Page, testInfo: TestInfo, options
   const roundLabel = options.round?.secondRound ? 'второго' : 'первого';
   const stepRoundTitle = options.round?.dayXOnly
     ? `Раздел кабинета: ${roundLabel} тур, таблица дня X`
-    : `Раздел кабинета: ${roundLabel} тур, дерево олимпиад или таблица дня X`;
+    : `Раздел кабинета: ${roundLabel} тур, дерево раздела или таблица дня X`;
 
   const { target, url } = testInfo.project.metadata as { target: string; url: string };
   const ctx = { environment: config.environment, target, url, runId: runIdValue };
@@ -273,13 +275,13 @@ export async function runCabinetScenario(page: Page, testInfo: TestInfo, options
     if (options.round) {
       await test.step(stepRoundTitle, async () => {
         const ms = await openRound(page, options.round);
-        results.push(recordMetric(ctx, 'olymp_tree_ms', ms, thresholds.olymp_tree_ms));
+        results.push(recordMetric(ctx, 'section_ms', ms, thresholds.section_ms));
       });
 
-      await test.step('Список состязаний', async () => {
+      await test.step('Таблица раздела', async () => {
         const table = await readExamTable(page, options.round);
         examCount = table.count;
-        expect(examCount, `в разделе ${roundLabel} тура не показано ни одного состязания`).toBeGreaterThan(0);
+        expect(examCount, `таблица раздела ${roundLabel} тура пуста`).toBeGreaterThan(0);
       });
     }
 
@@ -304,23 +306,29 @@ export async function runCabinetScenario(page: Page, testInfo: TestInfo, options
         url,
         scenario: config.scenario,
         exam_count: examCount,
-        labels: OLYMP_METRIC_LABELS,
-        title: OLYMP_REPORT_TITLE,
-        legend: OLYMP_REPORT_LEGEND,
-        metrics: results,
+        labels: SCENARIO_METRIC_LABELS,
+        title: SCENARIO_REPORT_TITLE,
+        legend: SCENARIO_REPORT_LEGEND,
+        metrics: results
       },
       null,
       2
     ),
-    contentType: 'application/json',
+    contentType: 'application/json'
   });
 
   const slow = results.filter(r => r.failure);
   expect(slow.map(r => r.failure).join('\n'), slow.map(r => r.failure).join('\n')).toBe('');
 }
 
-/** Снимок в любом исходе, целой страницей: при успехе — с таблицей состязаний, при падении — момент отказа. */
-async function captureScreenshot(page: Page, testInfo: TestInfo, target: string, runIdValue: string, failed: boolean): Promise<void> {
+/** Снимок в любом исходе, целой страницей: при успехе — с таблицей раздела, при падении — момент отказа. */
+async function captureScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  target: string,
+  runIdValue: string,
+  failed: boolean
+): Promise<void> {
   const file = screenshotPath(runIdValue, target, failed ? 'fail' : 'pass', testInfo);
   // Снимок — сверх бюджета теста: иначе таймаут теста на зависшей странице подменил бы
   // настоящую причину падения. 0 — таймаута нет.
