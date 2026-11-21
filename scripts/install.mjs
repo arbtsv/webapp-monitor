@@ -353,7 +353,12 @@ function printUsage(t) {
   return 2;
 }
 
-/** Точка входа. Возвращает код возврата; при прямом запуске — process.exitCode. */
+/**
+ * Точка входа. Возвращает код возврата; при прямом запуске — process.exitCode.
+ * `io` — точки подмены для офлайн-тестов: `stdin` (фейковый TTY-ввод) и
+ * `env` (снимок окружения вместо реального checkEnvironment): без подмены
+ * поведение определяется реальным состоянием бандла.
+ */
 export async function runInstall(argv, io = {}) {
   const stdin = io.stdin || process.stdin;
   const interactive = Boolean(stdin.isTTY);
@@ -389,7 +394,7 @@ export async function runInstall(argv, io = {}) {
     restoreLocalBrowsers(bundleRoot);
   }
 
-  let env = checkEnvironment(bundleRoot);
+  let env = io.env ?? checkEnvironment(bundleRoot);
   let plan = decidePlan(
     { localNodeOk: process.version === `v${NODE_VERSION}`, deps: env.deps, browser: env.browser },
     key
