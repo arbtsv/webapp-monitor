@@ -43,7 +43,7 @@ let translit: (text: string) => string;
 let messageKeys: () => string[];
 let RU_MESSAGES: Record<string, string>;
 let consentFromAnswer: (answer: string) => boolean;
-let runInstall: (argv: string[], io?: { stdin?: unknown }) => Promise<number>;
+let runInstall: (argv: string[], io?: { stdin?: unknown; env?: unknown }) => Promise<number>;
 
 test.beforeAll(async () => {
   installMod = await import(pathToFileURL(path.join(BUNDLE_ROOT, 'scripts', 'install.mjs')).href);
@@ -182,10 +182,12 @@ test('consentFromAnswer: пустой ответ — defaultYes (Enter), EOF/и�
 });
 
 /**
- * Интерактивный отказ через runInstall: фейковый stdin с isTTY. Отказ выходит до
- * шагов установки — ни сеть, ни файлы не трогаются. Ответ «y» здесь не гоняется:
- * он ведёт в реальные шаги (npm ci), что юниту недопустимо — эта ветка покрыта
- * ручной матрицей и harness install-bat.mjs.
+ * Интерактивный отказ через runInstall: фейковый stdin с isTTY и фиксированный
+ * снимок окружения NOT_READY_ENV. Отказ выходит до шагов установки — ни сеть,
+ * ни файлы не трогаются, а ветка вопроса не зависит от состояния реального бандла
+ * (на готовом окружении отказ возвращает 0 по контракту «уже готово»). Ответ «y»
+ * здесь не гоняется: он ведёт в реальные шаги (npm ci), что юниту недопустимо —
+ * эта ветка покрыта ручной матрицей и harness install-bat.mjs.
  */
 function fakeTtyStdin(answer: string | null) {
   const handlers: Record<string, (chunk: string) => void> = {};
@@ -206,13 +208,21 @@ function fakeTtyStdin(answer: string | null) {
   };
 }
 
+/** Неготовое окружение для runInstall: план содержит шаги, ветка отказа — код 2. */
+const NOT_READY_ENV = {
+  status: 'deps-missing',
+  node: 'v0.0.0',
+  deps: 'missing',
+  browser: 'missing'
+};
+
 test('runInstall: интерактивный ответ «n» — код 2 без шагов установки', async () => {
-  const rc = await runInstall([], { stdin: fakeTtyStdin('n\n') });
+  const rc = await runInstall([], { stdin: fakeTtyStdin('n\n'), env: NOT_READY_ENV });
   expect(rc).toBe(2);
 });
 
 test('runInstall: интерактивный EOF на вопросе — код 2', async () => {
-  const rc = await runInstall([], { stdin: fakeTtyStdin(null) });
+  const rc = await runInstall([], { stdin: fakeTtyStdin(null), env: NOT_READY_ENV });
   expect(rc).toBe(2);
 });
 
