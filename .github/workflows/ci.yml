@@ -39,7 +39,11 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
+      # prepare: husky на раннере не нужен (хуки — только на машине разработчика);
+      # husky v9 честит HUSKY=0 и молча пропускает install.
       - run: npm ci
+        env:
+          HUSKY: '0'
       # Область — белый список в eslint.config.mjs (копия в .prettierignore и
       # package.json -> lint-staged).
       - run: npx eslint
@@ -61,6 +65,8 @@ jobs:
           node-version: 24
           cache: 'npm'
       - run: npm ci
+        env:
+          HUSKY: '0'
       - run: npx playwright install chromium
       - run: npm run test:unit
       - run: npm run test:smoke
